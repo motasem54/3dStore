@@ -1,0 +1,9 @@
+# Prevent PHP execution in uploads directory
+<FilesMatch "\.php$">
+    Require all denied
+</FilesMatch>
+
+# Allow access to images and 3D models only
+<FilesMatch "\.(jpg|jpeg|png|gif|webp|glb|gltf)$">
+    Require all granted
+</FilesMatch>
