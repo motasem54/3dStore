@@ -5,12 +5,19 @@ if (!isset($active_page)) $active_page = '';
 $admin_name = $_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? 'المسؤول';
 $admin_role = $_SESSION['admin_role'] ?? 'admin';
 $role_label = $admin_role === 'admin' ? 'مدير' : 'مبيعات';
+
+// Get pending orders count
+$pending_orders = 0;
+try {
+    $result = $db->fetch("SELECT COUNT(*) as c FROM orders WHERE status='pending'");
+    $pending_orders = (int)($result['c'] ?? 0);
+} catch (Exception $e) {}
 ?>
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title><?php echo escape($page_title); ?> - 3D Store</title>
     <link rel="stylesheet" href="/admin/assets/css/admin-glass.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css">
@@ -27,6 +34,9 @@ $role_label = $admin_role === 'admin' ? 'مدير' : 'مبيعات';
                     <p>لوحة التحكم</p>
                 </div>
             </div>
+            <button class="sidebar-close" id="sidebarClose">
+                <i class="bi bi-x-lg"></i>
+            </button>
         </div>
         
         <nav class="sidebar-nav">
@@ -44,7 +54,7 @@ $role_label = $admin_role === 'admin' ? 'مدير' : 'مبيعات';
                 <i class="bi bi-plus-circle"></i>
                 <span>إضافة منتج</span>
             </a>
-            <a href="/admin/products/categories.php" class="nav-item <?php echo $active_page === 'categories' ? 'active' : ''; ?>">
+            <a href="/admin/categories/" class="nav-item <?php echo $active_page === 'categories' ? 'active' : ''; ?>">
                 <i class="bi bi-tags"></i>
                 <span>التصنيفات</span>
             </a>
@@ -53,51 +63,42 @@ $role_label = $admin_role === 'admin' ? 'مدير' : 'مبيعات';
             <a href="/admin/orders/" class="nav-item <?php echo $active_page === 'orders' ? 'active' : ''; ?>">
                 <i class="bi bi-receipt"></i>
                 <span>الطلبات</span>
-                <?php
-                $pending = $db->query("SELECT COUNT(*) as c FROM orders WHERE status='pending'")->fetch()['c'] ?? 0;
-                if ($pending > 0) echo '<span class="badge-count">'. $pending .'</span>';
-                ?>
+                <?php if ($pending_orders > 0): ?>
+                <span class="badge-count"><?php echo $pending_orders; ?></span>
+                <?php endif; ?>
             </a>
             <a href="/admin/pos/" class="nav-item <?php echo $active_page === 'pos' ? 'active' : ''; ?>">
                 <i class="bi bi-calculator"></i>
                 <span>نقطة البيع</span>
             </a>
-            
-            <div class="nav-section">المحاسبة</div>
-            <a href="/admin/accounting/" class="nav-item <?php echo $active_page === 'accounting' ? 'active' : ''; ?>">
+            <a href="/admin/reports/" class="nav-item <?php echo $active_page === 'reports' ? 'active' : ''; ?>">
                 <i class="bi bi-graph-up"></i>
-                <span>التقارير المالية</span>
-            </a>
-            <a href="/admin/accounting/expenses.php" class="nav-item <?php echo $active_page === 'expenses' ? 'active' : ''; ?>">
-                <i class="bi bi-cash-stack"></i>
-                <span>المصروفات</span>
+                <span>التقارير</span>
             </a>
             
-            <div class="nav-section">المخزون</div>
-            <a href="/admin/inventory/" class="nav-item <?php echo $active_page === 'inventory' ? 'active' : ''; ?>">
-                <i class="bi bi-boxes"></i>
-                <span>إدارة المخزون</span>
-            </a>
-            
-            <div class="nav-section">العملاء</div>
-            <a href="/admin/customers/" class="nav-item <?php echo $active_page === 'customers' ? 'active' : ''; ?>">
+            <div class="nav-section">المستخدمين</div>
+            <a href="/admin/users/" class="nav-item <?php echo $active_page === 'users' ? 'active' : ''; ?>">
                 <i class="bi bi-people"></i>
-                <span>العملاء</span>
-            </a>
-            <a href="/admin/reviews/" class="nav-item <?php echo $active_page === 'reviews' ? 'active' : ''; ?>">
-                <i class="bi bi-star"></i>
-                <span>التقييمات</span>
+                <span>المستخدمين</span>
             </a>
             
             <?php if ($admin_role === 'admin'): ?>
             <div class="nav-section">الإعدادات</div>
             <a href="/admin/settings/" class="nav-item <?php echo $active_page === 'settings' ? 'active' : ''; ?>">
                 <i class="bi bi-gear"></i>
-                <span>الإعدادات العامة</span>
+                <span>عامة</span>
+            </a>
+            <a href="/admin/settings/smtp.php" class="nav-item <?php echo $active_page === 'smtp' ? 'active' : ''; ?>">
+                <i class="bi bi-envelope"></i>
+                <span>SMTP</span>
+            </a>
+            <a href="/admin/settings/whatsapp.php" class="nav-item <?php echo $active_page === 'whatsapp' ? 'active' : ''; ?>">
+                <i class="bi bi-whatsapp"></i>
+                <span>WhatsApp</span>
             </a>
             <a href="/admin/settings/appearance.php" class="nav-item <?php echo $active_page === 'appearance' ? 'active' : ''; ?>">
                 <i class="bi bi-palette"></i>
-                <span>المظهر والألوان</span>
+                <span>المظهر</span>
             </a>
             <a href="/admin/settings/chatbot.php" class="nav-item <?php echo $active_page === 'chatbot' ? 'active' : ''; ?>">
                 <i class="bi bi-robot"></i>
@@ -106,6 +107,9 @@ $role_label = $admin_role === 'admin' ? 'مدير' : 'مبيعات';
             <?php endif; ?>
         </nav>
     </aside>
+    
+    <!-- Overlay for mobile -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
     
     <!-- Main Content -->
     <div class="main-content">
@@ -119,25 +123,20 @@ $role_label = $admin_role === 'admin' ? 'مدير' : 'مبيعات';
             </div>
             
             <div class="navbar-end">
-                <button class="btn-icon" title="الإشعارات">
-                    <i class="bi bi-bell"></i>
-                    <span class="badge-dot"></span>
-                </button>
-                
-                <button class="btn-icon" title="البحث">
-                    <i class="bi bi-search"></i>
-                </button>
+                <a href="/" target="_blank" class="btn-icon" title="عرض المتجر">
+                    <i class="bi bi-shop"></i>
+                </a>
                 
                 <div class="user-menu">
                     <button class="user-btn" id="userMenuBtn">
                         <i class="bi bi-person-circle"></i>
-                        <span><?php echo escape($admin_name); ?></span>
+                        <span class="user-name"><?php echo escape($admin_name); ?></span>
                         <span class="role-badge"><?php echo escape($role_label); ?></span>
                     </button>
                     <div class="dropdown-menu" id="userDropdown">
-                        <a href="/admin/profile.php"><i class="bi bi-person"></i> الملف الشخصي</a>
+                        <?php if ($admin_role === 'admin'): ?>
                         <a href="/admin/settings/"><i class="bi bi-gear"></i> الإعدادات</a>
-                        <hr>
+                        <?php endif; ?>
                         <a href="/admin/logout.php" class="text-danger"><i class="bi bi-box-arrow-right"></i> تسجيل الخروج</a>
                     </div>
                 </div>
@@ -146,3 +145,13 @@ $role_label = $admin_role === 'admin' ? 'مدير' : 'مبيعات';
         
         <!-- Content Wrapper -->
         <div class="content-wrapper">
+            <?php
+            if (isset($_SESSION['success'])) {
+                echo '<div class="alert alert-success"><i class="bi bi-check-circle"></i> ' . escape($_SESSION['success']) . '</div>';
+                unset($_SESSION['success']);
+            }
+            if (isset($_SESSION['error'])) {
+                echo '<div class="alert alert-danger"><i class="bi bi-exclamation-circle"></i> ' . escape($_SESSION['error']) . '</div>';
+                unset($_SESSION['error']);
+            }
+            ?>
