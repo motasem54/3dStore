@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Store - Demo Preview</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --secondary: #8b5cf6;
+            --success: #10b981;
+            --danger: #ef4444;
+            --dark: #0f172a;
+            --text: #1e293b;
+            --text-light: #64748b;
+            --border: #e2e8f0;
+            --bg-light: #f8fafc;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #ffffff; color: var(--text); line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        
+        /* Top Bar */
+        .top-bar { background: var(--dark); color: white; padding: 8px 0; font-size: 13px; }
+        .top-bar-content { display: flex; justify-content: space-between; align-items: center; }
+        .top-bar-left { display: flex; align-items: center; gap: 8px; }
+        .top-bar-right { display: flex; gap: 16px; }
+        .lang-switcher a, .currency-switcher a { color: rgba(255,255,255,0.7); text-decoration: none; }
+        .lang-switcher a.active, .currency-switcher a.active { color: white; font-weight: 600; }
+        
+        /* Header */
+        .main-header { background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
+        .header-content { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; }
+        .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--dark); font-weight: 700; font-size: 20px; }
+        .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; }
+        .main-nav { display: flex; gap: 24px; flex: 1; margin: 0 40px; }
+        .nav-link { color: var(--text); text-decoration: none; font-weight: 500; transition: color 0.3s; }
+        .nav-link:hover, .nav-link.active { color: var(--primary); }
+        .header-actions { display: flex; gap: 12px; align-items: center; }
+        .header-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--bg-light); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; position: relative; color: var(--text); text-decoration: none; }
+        .header-icon:hover { background: var(--primary); color: white; transform: translateY(-2px); }
+        .header-icon .badge { position: absolute; top: -4px; left: -4px; background: var(--danger); color: white; width: 20px; height: 20px; border-radius: 50%; font-size: 11px; display: flex; align-items: center; justify-content: center; font-weight: 600; }
+        
+        /* Hero Section */
+        .hero-section { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 80px 0; position: relative; overflow: hidden; }
+        .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+        .hero-badge { display: inline-block; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); padding: 8px 16px; border-radius: 20px; color: white; font-size: 14px; margin-bottom: 20px; }
+        .hero-title { font-size: 48px; font-weight: 800; color: white; margin-bottom: 20px; line-height: 1.2; }
+        .hero-desc { font-size: 18px; color: rgba(255,255,255,0.9); margin-bottom: 32px; }
+        .hero-buttons { display: flex; gap: 16px; margin-bottom: 40px; }
+        .hero-stats { display: flex; gap: 40px; }
+        .stat-item h3 { font-size: 32px; font-weight: 700; color: white; }
+        .stat-item p { color: rgba(255,255,255,0.8); font-size: 14px; }
+        .hero-visual { width: 100%; height: 500px; background: rgba(255,255,255,0.1); backdrop-filter: blur(20px); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 80px; color: rgba(255,255,255,0.3); }
+        
+        /* Buttons */
+        .btn { padding: 12px 28px; border-radius: 10px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; border: none; cursor: pointer; }
+        .btn-primary { background: white; color: var(--primary); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(255,255,255,0.3); }
+        .btn-outline { background: transparent; color: white; border: 2px solid white; }
+        .btn-outline:hover { background: white; color: var(--primary); }
+        
+        /* Categories */
+        .section { padding: 80px 0; }
+        .section-header { text-align: center; margin-bottom: 50px; }
+        .section-title { font-size: 36px; font-weight: 700; color: var(--dark); margin-bottom: 12px; }
+        .section-desc { color: var(--text-light); }
+        .categories-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 24px; }
+        .category-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); transition: transform 0.3s; text-decoration: none; color: var(--text); }
+        .category-card:hover { transform: translateY(-8px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+        .category-image { width: 100%; height: 180px; background: linear-gradient(135deg, #667eea, #764ba2); display: flex; align-items: center; justify-content: center; font-size: 60px; color: rgba(255,255,255,0.3); }
+        .category-info { padding: 20px; text-align: center; }
+        .category-info h3 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+        .category-info span { font-size: 14px; color: var(--text-light); }
+        
+        /* Products */
+        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; }
+        .product-card { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.08); transition: transform 0.3s; }
+        .product-card:hover { transform: translateY(-8px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+        .product-image { width: 100%; height: 280px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); position: relative; display: flex; align-items: center; justify-content: center; font-size: 80px; color: rgba(255,255,255,0.2); }
+        .product-badge { position: absolute; top: 12px; right: 12px; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; background: rgba(59, 130, 246, 0.9); color: white; }
+        .product-actions { position: absolute; top: 12px; left: 12px; display: flex; flex-direction: column; gap: 8px; opacity: 0; transition: opacity 0.3s; }
+        .product-card:hover .product-actions { opacity: 1; }
+        .action-btn { width: 40px; height: 40px; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); border: none; border-radius: 10px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.3s; color: var(--text); }
+        .action-btn:hover { background: var(--primary); color: white; }
+        .product-info { padding: 20px; }
+        .product-title { font-size: 16px; font-weight: 600; color: var(--dark); margin-bottom: 8px; display: block; text-decoration: none; }
+        .product-title:hover { color: var(--primary); }
+        .product-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 13px; }
+        .product-sku { color: var(--text-light); }
+        .stock-badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; background: rgba(16, 185, 129, 0.1); color: var(--success); }
+        .product-footer { display: flex; justify-content: space-between; align-items: center; }
+        .product-price { font-size: 22px; font-weight: 700; color: var(--primary); }
+        .btn-add-cart { width: 44px; height: 44px; background: var(--primary); border: none; border-radius: 12px; color: white; font-size: 18px; cursor: pointer; transition: all 0.3s; }
+        .btn-add-cart:hover { background: var(--secondary); transform: scale(1.1); }
+        
+        /* Features */
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 32px; }
+        .feature-card { text-align: center; }
+        .feature-icon { width: 80px; height: 80px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; font-size: 32px; color: white; }
+        .feature-card h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+        .feature-card p { color: var(--text-light); }
+        
+        /* Footer */
+        .main-footer { background: var(--dark); color: white; padding: 60px 0 20px; }
+        .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1.5fr; gap: 40px; margin-bottom: 40px; }
+        .footer-logo { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 700; margin-bottom: 16px; }
+        .footer-desc { color: rgba(255,255,255,0.7); margin-bottom: 20px; line-height: 1.6; }
+        .social-links { display: flex; gap: 12px; }
+        .social-link { width: 40px; height: 40px; background: rgba(255,255,255,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; text-decoration: none; transition: all 0.3s; }
+        .social-link:hover { background: var(--primary); transform: translateY(-2px); }
+        .footer-col h4 { font-size: 18px; margin-bottom: 20px; }
+        .footer-links { list-style: none; }
+        .footer-links li { margin-bottom: 12px; }
+        .footer-links a { color: rgba(255,255,255,0.7); text-decoration: none; transition: color 0.3s; }
+        .footer-links a:hover { color: white; }
+        .footer-bottom { border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px; display: flex; justify-content: space-between; align-items: center; color: rgba(255,255,255,0.7); font-size: 14px; }
+        .payment-methods { display: flex; gap: 12px; font-size: 24px; }
+        
+        @media (max-width: 768px) {
+            .hero-grid { grid-template-columns: 1fr; }
+            .hero-title { font-size: 32px; }
+            .products-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+            .footer-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="container">
+            <div class="top-bar-content">
+                <div class="top-bar-left">
+                    <i class="bi bi-truck"></i>
+                    <span>شحن مجاني على جميع الطلبات فوق 200₪</span>
+                </div>
+                <div class="top-bar-right">
+                    <div class="lang-switcher">
+                        <a href="#" class="active">AR</a>
+                        <span>|</span>
+                        <a href="#">EN</a>
+                    </div>
+                    <div class="currency-switcher">
+                        <a href="#" class="active">₪</a>
+                        <span>|</span>
+                        <a href="#">$</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Header -->
+    <header class="main-header">
+        <div class="container">
+            <div class="header-content">
+                <a href="#" class="logo">
+                    <div class="logo-icon"><i class="bi bi-box-seam"></i></div>
+                    <span class="logo-text">3D Store</span>
+                </a>
+                
+                <nav class="main-nav">
+                    <a href="#" class="nav-link active">الرئيسية</a>
+                    <a href="#" class="nav-link">المنتجات</a>
+                    <a href="#" class="nav-link">التصنيفات</a>
+                    <a href="#" class="nav-link">تتبع طلبك</a>
+                </nav>
+                
+                <div class="header-actions">
+                    <button class="header-icon">
+                        <i class="bi bi-search"></i>
+                    </button>
+                    <a href="#" class="header-icon">
+                        <i class="bi bi-heart"></i>
+                        <span class="badge">3</span>
+                    </a>
+                    <a href="#" class="header-icon">
+                        <i class="bi bi-cart3"></i>
+                        <span class="badge">5</span>
+                    </a>
+                    <a href="#" class="header-icon">
+                        <i class="bi bi-person-circle"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+    
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="hero-grid">
+                <div class="hero-text">
+                    <span class="hero-badge">وصل حديثاً</span>
+                    <h1 class="hero-title">استكشف عالم الطباعة ثلاثية الأبعاد</h1>
+                    <p class="hero-desc">منتجات مبتكرة بتقنية 3D بجودة عالية وأسعار منافسة</p>
+                    <div class="hero-buttons">
+                        <a href="#" class="btn btn-primary">
+                            <i class="bi bi-shop"></i> تسوق الآن
+                        </a>
+                        <a href="#" class="btn btn-outline">
+                            <i class="bi bi-grid"></i> تصفح التصنيفات
+                        </a>
+                    </div>
+                    <div class="hero-stats">
+                        <div class="stat-item">
+                            <h3>150+</h3>
+                            <p>منتج</p>
+                        </div>
+                        <div class="stat-item">
+                            <h3>500+</h3>
+                            <p>طلب</p>
+                        </div>
+                        <div class="stat-item">
+                            <h3>4.9</h3>
+                            <p>تقييم <i class="bi bi-star-fill" style="color: #fbbf24;"></i></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero-visual">
+                    <i class="bi bi-box-seam"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Categories -->
+    <section class="section">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">تسوق حسب التصنيف</h2>
+                <p class="section-desc">اختر من بين تشكيلة واسعة من التصنيفات</p>
+            </div>
+            <div class="categories-grid">
+                <a href="#" class="category-card">
+                    <div class="category-image"><i class="bi bi-gift"></i></div>
+                    <div class="category-info">
+                        <h3>هدايا وديكورات</h3>
+                        <span>45 منتج</span>
+                    </div>
+                </a>
+                <a href="#" class="category-card">
+                    <div class="category-image"><i class="bi bi-puzzle"></i></div>
+                    <div class="category-info">
+                        <h3>ألعاب وألغاز</h3>
+                        <span>32 منتج</span>
+                    </div>
+                </a>
+                <a href="#" class="category-card">
+                    <div class="category-image"><i class="bi bi-tools"></i></div>
+                    <div class="category-info">
+                        <h3>أدوات ومعدات</h3>
+                        <span>28 منتج</span>
+                    </div>
+                </a>
+                <a href="#" class="category-card">
+                    <div class="category-image"><i class="bi bi-palette"></i></div>
+                    <div class="category-info">
+                        <h3>فن وإبداع</h3>
+                        <span>38 منتج</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Products -->
+    <section class="section" style="background: var(--bg-light);">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">منتجات مميزة</h2>
+                <p class="section-desc">أفضل المنتجات المطبوعة ثلاثية الأبعاد</p>
+            </div>
+            <div class="products-grid">
+                <div class="product-card">
+                    <div class="product-image">
+                        <i class="bi bi-box"></i>
+                        <span class="product-badge"><i class="bi bi-box"></i> 3D</span>
+                        <div class="product-actions">
+                            <button class="action-btn"><i class="bi bi-heart"></i></button>
+                            <button class="action-btn"><i class="bi bi-eye"></i></button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <a href="#" class="product-title">مجسم ديكور عصري</a>
+                        <div class="product-meta">
+                            <span class="product-sku">SKU: 3D-001</span>
+                            <span class="stock-badge"><i class="bi bi-check-circle"></i> متوفر</span>
+                        </div>
+                        <div class="product-footer">
+                            <div class="product-price">149.00 ₪</div>
+                            <button class="btn-add-cart"><i class="bi bi-cart-plus"></i></button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="product-card">
+                    <div class="product-image">
+                        <i class="bi bi-gift"></i>
+                        <span class="product-badge"><i class="bi bi-box"></i> 3D</span>
+                        <div class="product-actions">
+                            <button class="action-btn"><i class="bi bi-heart"></i></button>
+                            <button class="action-btn"><i class="bi bi-eye"></i></button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <a href="#" class="product-title">هدية مخصصة</a>
+                        <div class="product-meta">
+                            <span class="product-sku">SKU: 3D-002</span>
+                            <span class="stock-badge"><i class="bi bi-check-circle"></i> متوفر</span>
+                        </div>
+                        <div class="product-footer">
+                            <div class="product-price">89.00 ₪</div>
+                            <button class="btn-add-cart"><i class="bi bi-cart-plus"></i></button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="product-card">
+                    <div class="product-image">
+                        <i class="bi bi-puzzle"></i>
+                        <div class="product-actions">
+                            <button class="action-btn"><i class="bi bi-heart"></i></button>
+                            <button class="action-btn"><i class="bi bi-eye"></i></button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <a href="#" class="product-title">لعبة تركيب 3D</a>
+                        <div class="product-meta">
+                            <span class="product-sku">SKU: 3D-003</span>
+                            <span class="stock-badge"><i class="bi bi-check-circle"></i> متوفر</span>
+                        </div>
+                        <div class="product-footer">
+                            <div class="product-price">129.00 ₪</div>
+                            <button class="btn-add-cart"><i class="bi bi-cart-plus"></i></button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="product-card">
+                    <div class="product-image">
+                        <i class="bi bi-lightbulb"></i>
+                        <span class="product-badge"><i class="bi bi-box"></i> 3D</span>
+                        <div class="product-actions">
+                            <button class="action-btn"><i class="bi bi-heart"></i></button>
+                            <button class="action-btn"><i class="bi bi-eye"></i></button>
+                        </div>
+                    </div>
+                    <div class="product-info">
+                        <a href="#" class="product-title">إضاءة ديكور فريدة</a>
+                        <div class="product-meta">
+                            <span class="product-sku">SKU: 3D-004</span>
+                            <span class="stock-badge"><i class="bi bi-check-circle"></i> متوفر</span>
+                        </div>
+                        <div class="product-footer">
+                            <div class="product-price">199.00 ₪</div>
+                            <button class="btn-add-cart"><i class="bi bi-cart-plus"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Features -->
+    <section class="section">
+        <div class="container">
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-truck"></i></div>
+                    <h3>شحن مجاني</h3>
+                    <p>على جميع الطلبات فوق 200₪</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-shield-check"></i></div>
+                    <h3>دفع آمن</h3>
+                    <p>معاملات مشفرة 100%</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-arrow-repeat"></i></div>
+                    <h3>إرجاع سهل</h3>
+                    <p>استرجاع خلال 14 يوم</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="bi bi-headset"></i></div>
+                    <h3>دعم 24/7</h3>
+                    <p>فريق جاهز لمساعدتك</p>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <div class="footer-logo">
+                        <div class="logo-icon"><i class="bi bi-box-seam"></i></div>
+                        <span>3D Store</span>
+                    </div>
+                    <p class="footer-desc">منتجات مبتكرة بتقنية 3D بجودة عالية وأسعار منافسة</p>
+                    <div class="social-links">
+                        <a href="#" class="social-link"><i class="bi bi-facebook"></i></a>
+                        <a href="#" class="social-link"><i class="bi bi-instagram"></i></a>
+                        <a href="#" class="social-link"><i class="bi bi-twitter"></i></a>
+                        <a href="#" class="social-link"><i class="bi bi-whatsapp"></i></a>
+                    </div>
+                </div>
+                
+                <div class="footer-col">
+                    <h4>روابط سريعة</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">الرئيسية</a></li>
+                        <li><a href="#">المنتجات</a></li>
+                        <li><a href="#">التصنيفات</a></li>
+                        <li><a href="#">تتبع طلبك</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-col">
+                    <h4>خدمة العملاء</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">حسابي</a></li>
+                        <li><a href="#">السلة</a></li>
+                        <li><a href="#">المفضلة</a></li>
+                        <li><a href="#">اتصل بنا</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-col">
+                    <h4>اشترك بالنشرة</h4>
+                    <p style="color: rgba(255,255,255,0.7); margin-bottom: 16px;">احصل على آخر العروض والمنتجات</p>
+                    <div style="display: flex; gap: 8px;">
+                        <input type="email" placeholder="بريدك الإلكتروني" style="flex: 1; padding: 12px 16px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); border-radius: 10px; color: white;">
+                        <button style="width: 44px; height: 44px; background: var(--primary); border: none; border-radius: 10px; color: white; cursor: pointer;"><i class="bi bi-send"></i></button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 3D Store. جميع الحقوق محفوظة</p>
+                <div class="payment-methods">
+                    <i class="bi bi-credit-card"></i>
+                    <i class="bi bi-paypal"></i>
+                    <i class="bi bi-cash"></i>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+</body>
+</html>
