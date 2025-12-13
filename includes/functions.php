@@ -1,446 +1,412 @@
 <?php
 /**
- * 3D Store - Helper Functions
- * Phase 1: Core functions for file handling, validation, and utilities
+ * Helper Functions
+ * All utility functions in one place
  */
 
-// ========================================
-// FILE UPLOAD FUNCTIONS
-// ========================================
+require_once __DIR__ . '/db.php';
 
 /**
- * Upload a file to the server
- * @param array $file The $_FILES array element
- * @param string $folder Target folder (products, settings, categories, etc.)
- * @param array $allowed_types Allowed MIME types
- * @param int $max_size Maximum file size in bytes (default 5MB)
- * @return string|false Filename on success, false on failure
+ * Get setting value from database
  */
-function uploadFile($file, $folder = 'products', $allowed_types = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'], $max_size = 5242880) {
-    // Check if file was uploaded
-    if (!isset($file['tmp_name']) || empty($file['tmp_name'])) {
-        return false;
-    }
+function getSetting($key, $default = '') {
+    static $settings = null;
     
-    // Check for upload errors
-    if ($file['error'] !== UPLOAD_ERR_OK) {
-        return false;
-    }
-    
-    // Check file size
-    if ($file['size'] > $max_size) {
-        return false;
-    }
-    
-    // Check file type
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    $mime_type = finfo_file($finfo, $file['tmp_name']);
-    finfo_close($finfo);
-    
-    if (!in_array($mime_type, $allowed_types)) {
-        return false;
-    }
-    
-    // Generate unique filename
-    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $filename = uniqid() . '_' . time() . '.' . strtolower($extension);
-    
-    // Create upload directory if not exists
-    $upload_path = UPLOAD_PATH . '/' . $folder;
-    if (!is_dir($upload_path)) {
-        mkdir($upload_path, 0755, true);
-    }
-    
-    // Move uploaded file
-    $destination = $upload_path . '/' . $filename;
-    if (move_uploaded_file($file['tmp_name'], $destination)) {
-        // Optimize image if it's an image file
-        if (in_array($mime_type, ['image/jpeg', 'image/png', 'image/gif', 'image/webp'])) {
-            optimizeImage($destination, $mime_type);
+    if ($settings === null) {
+        $db = Database::getInstance();
+        $rows = $db->fetchAll("SELECT setting_key, setting_value FROM site_settings");
+        
+        $settings = [];
+        foreach ($rows as $row) {
+            $settings[$row['setting_key']] = $row['setting_value'];
         }
-        return $filename;
     }
     
-    return false;
+    return $settings[$key] ?? $default;
 }
 
 /**
- * Delete a file from the server
- * @param string $filename File name
- * @param string $folder Folder name
- * @return bool Success status
+ * Update setting in database
  */
-function deleteFile($filename, $folder = 'products') {
-    if (empty($filename)) return false;
+function updateSetting($key, $value) {
+    $db = Database::getInstance();
     
-    $file_path = UPLOAD_PATH . '/' . $folder . '/' . $filename;
-    if (file_exists($file_path)) {
-        return unlink($file_path);
-    }
-    return false;
+    $db->query(
+        "INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?)
+         ON DUPLICATE KEY UPDATE setting_value = ?, updated_at = NOW()",
+        [$key, $value, $value]
+    );
+    
+    return true;
 }
 
 /**
- * Optimize image file (resize and compress)
- * @param string $file_path Full path to the image
- * @param string $mime_type MIME type of the image
- * @param int $max_width Maximum width (default 1200px)
- * @param int $quality JPEG quality (default 85)
- * @return bool Success status
+ * Get cart items count
  */
-function optimizeImage($file_path, $mime_type, $max_width = 1200, $quality = 85) {
-    // Get image dimensions
-    list($width, $height) = getimagesize($file_path);
-    
-    // Check if resizing is needed
-    if ($width <= $max_width) {
-        return true; // No optimization needed
+function getCartItemsCount() {
+    if (isset($_SESSION['user_id'])) {
+        $db = Database::getInstance();
+        $result = $db->fetchOne(
+            "SELECT SUM(quantity) as total FROM cart WHERE user_id = ?",
+            [$_SESSION['user_id']]
+        );
+        return (int)($result['total'] ?? 0);
+    } else {
+        return isset($_SESSION['cart']) ? array_sum($_SESSION['cart']) : 0;
+    }
+}
+
+/**
+ * Format price with currency symbol
+ */
+function formatPrice($price, $currency = null) {
+    if ($currency === null) {
+        $currency = getSetting('currency', 'ILS');
     }
     
-    // Calculate new dimensions
-    $ratio = $max_width / $width;
-    $new_width = $max_width;
-    $new_height = (int)($height * $ratio);
+    $symbol = getSetting('currency_symbol', '₪');
+    $position = getSetting('currency_position', 'after');
+    $formatted = number_format($price, 2);
     
-    // Create image resource based on type
-    switch ($mime_type) {
-        case 'image/jpeg':
-            $source = imagecreatefromjpeg($file_path);
-            break;
-        case 'image/png':
-            $source = imagecreatefrompng($file_path);
-            break;
-        case 'image/gif':
-            $source = imagecreatefromgif($file_path);
-            break;
-        case 'image/webp':
-            $source = imagecreatefromwebp($file_path);
-            break;
-        default:
-            return false;
+    if ($position === 'before') {
+        return $symbol . ' ' . $formatted;
+    } else {
+        return $formatted . ' ' . $symbol;
+    }
+}
+
+/**
+ * Get currency symbol
+ */
+function getCurrencySymbol() {
+    return getSetting('currency_symbol', '₪');
+}
+
+/**
+ * Get discount percentage
+ */
+function getDiscountPercentage($original_price, $discount_price) {
+    if ($original_price <= 0) return 0;
+    return round((($original_price - $discount_price) / $original_price) * 100);
+}
+
+/**
+ * Translation helper
+ */
+function t($key) {
+    static $translations = null;
+    
+    if ($translations === null) {
+        $lang = LANG;
+        $file = __DIR__ . "/../lang/{$lang}.php";
+        
+        if (file_exists($file)) {
+            $translations = require $file;
+        } else {
+            $translations = [];
+        }
     }
     
-    // Create new image
+    return $translations[$key] ?? $key;
+}
+
+/**
+ * Truncate text
+ */
+function truncate($text, $length = 100, $suffix = '...') {
+    if (mb_strlen($text) <= $length) {
+        return $text;
+    }
+    
+    return mb_substr($text, 0, $length) . $suffix;
+}
+
+/**
+ * Time ago helper
+ */
+function timeAgo($timestamp) {
+    $diff = time() - strtotime($timestamp);
+    
+    if ($diff < 60) {
+        return $diff . ' seconds ago';
+    } elseif ($diff < 3600) {
+        return floor($diff / 60) . ' minutes ago';
+    } elseif ($diff < 86400) {
+        return floor($diff / 3600) . ' hours ago';
+    } elseif ($diff < 604800) {
+        return floor($diff / 86400) . ' days ago';
+    } else {
+        return date('M d, Y', strtotime($timestamp));
+    }
+}
+
+/**
+ * Generate slug from text
+ */
+function generateSlug($text) {
+    // Convert to lowercase
+    $text = strtolower($text);
+    
+    // Replace spaces with hyphens
+    $text = str_replace(' ', '-', $text);
+    
+    // Remove special characters
+    $text = preg_replace('/[^a-z0-9-]/', '', $text);
+    
+    // Remove multiple hyphens
+    $text = preg_replace('/-+/', '-', $text);
+    
+    return trim($text, '-');
+}
+
+/**
+ * Redirect helper
+ */
+function redirect($url, $status_code = 302) {
+    header("Location: {$url}", true, $status_code);
+    exit;
+}
+
+/**
+ * Flash message
+ */
+function setFlash($type, $message) {
+    $_SESSION['flash'][$type] = $message;
+}
+
+function getFlash($type) {
+    if (isset($_SESSION['flash'][$type])) {
+        $message = $_SESSION['flash'][$type];
+        unset($_SESSION['flash'][$type]);
+        return $message;
+    }
+    return null;
+}
+
+/**
+ * Check if product is in wishlist
+ */
+function isInWishlist($product_id) {
+    if (!isset($_SESSION['user_id'])) return false;
+    
+    $db = Database::getInstance();
+    $result = $db->fetchOne(
+        "SELECT id FROM wishlist WHERE user_id = ? AND product_id = ?",
+        [$_SESSION['user_id'], $product_id]
+    );
+    
+    return !empty($result);
+}
+
+/**
+ * Escape HTML output
+ */
+function escape($string) {
+    return htmlspecialchars($string, ENT_QUOTES, 'UTF-8');
+}
+
+// ============================================
+// IMAGE PROCESSING FUNCTIONS
+// ============================================
+
+/**
+ * Upload and process image
+ */
+function uploadImage($file, $destination = 'products', $max_width = 1200, $max_height = 0, $apply_watermark = true) {
+    require_once __DIR__ . '/security.php';
+    $validation = validateFileUpload($file, ['jpg', 'jpeg', 'png', 'gif', 'webp']);
+    
+    if (!$validation['valid']) {
+        return ['success' => false, 'message' => $validation['message']];
+    }
+    
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    $filename = uniqid() . '_' . time() . '.' . $ext;
+    
+    $upload_dir = UPLOAD_PATH . '/' . $destination . '/';
+    if (!is_dir($upload_dir)) {
+        mkdir($upload_dir, 0755, true);
+    }
+    
+    $filepath = $upload_dir . $filename;
+    
+    if (!move_uploaded_file($file['tmp_name'], $filepath)) {
+        return ['success' => false, 'message' => 'Failed to upload file'];
+    }
+    
+    if ($max_width > 0 || $max_height > 0) {
+        resizeImage($filepath, $max_width, $max_height);
+    }
+    
+    if ($apply_watermark && getSetting('enable_watermark') == '1') {
+        applyWatermark($filepath);
+    }
+    
+    return [
+        'success' => true,
+        'filename' => $filename,
+        'path' => $filepath,
+        'message' => 'Image uploaded successfully'
+    ];
+}
+
+/**
+ * Resize image
+ */
+function resizeImage($filepath, $max_width = 1200, $max_height = 0, $quality = 85) {
+    if (!file_exists($filepath)) return false;
+    
+    $info = getimagesize($filepath);
+    if (!$info) return false;
+    
+    list($width, $height, $type) = $info;
+    
+    if ($max_height == 0) $max_height = $height;
+    
+    $ratio = min($max_width / $width, $max_height / $height);
+    if ($ratio >= 1) return true;
+    
+    $new_width = floor($width * $ratio);
+    $new_height = floor($height * $ratio);
+    
+    $source = createImageResource($filepath, $type);
+    if (!$source) return false;
+    
     $destination = imagecreatetruecolor($new_width, $new_height);
     
-    // Preserve transparency for PNG and GIF
-    if ($mime_type === 'image/png' || $mime_type === 'image/gif') {
+    if ($type == IMAGETYPE_PNG || $type == IMAGETYPE_GIF) {
         imagealphablending($destination, false);
         imagesavealpha($destination, true);
         $transparent = imagecolorallocatealpha($destination, 255, 255, 255, 127);
         imagefilledrectangle($destination, 0, 0, $new_width, $new_height, $transparent);
     }
     
-    // Resize image
     imagecopyresampled($destination, $source, 0, 0, 0, 0, $new_width, $new_height, $width, $height);
     
-    // Save optimized image
-    switch ($mime_type) {
-        case 'image/jpeg':
-            imagejpeg($destination, $file_path, $quality);
-            break;
-        case 'image/png':
-            imagepng($destination, $file_path, 9);
-            break;
-        case 'image/gif':
-            imagegif($destination, $file_path);
-            break;
-        case 'image/webp':
-            imagewebp($destination, $file_path, $quality);
-            break;
-    }
+    saveImageResource($destination, $filepath, $type, $quality);
     
-    // Free memory
     imagedestroy($source);
     imagedestroy($destination);
     
     return true;
 }
 
-// ========================================
-// VALIDATION FUNCTIONS
-// ========================================
-
 /**
- * Validate email address
- * @param string $email Email to validate
- * @return bool Valid status
+ * Apply watermark
  */
-function isValidEmail($email) {
-    return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
-}
-
-/**
- * Validate phone number (Palestine format)
- * @param string $phone Phone to validate
- * @return bool Valid status
- */
-function isValidPhone($phone) {
-    // Remove spaces and dashes
-    $phone = preg_replace('/[\s-]/', '', $phone);
+function applyWatermark($image_path) {
+    $watermark_file = getSetting('watermark_image');
+    if (empty($watermark_file)) return false;
     
-    // Check Palestinian phone formats
-    // Mobile: 05XXXXXXXX or +9725XXXXXXXX
-    // Landline: 0[2-9]XXXXXXX
-    return preg_match('/^(05\d{8}|\+9725\d{8}|0[2-9]\d{7})$/', $phone);
-}
-
-/**
- * Sanitize and validate URL
- * @param string $url URL to validate
- * @return string|false Sanitized URL or false
- */
-function isValidURL($url) {
-    $url = filter_var($url, FILTER_SANITIZE_URL);
-    return filter_var($url, FILTER_VALIDATE_URL);
-}
-
-/**
- * Check if user is admin
- * @return bool Admin status
- */
-function isAdmin() {
-    return isset($_SESSION['user_id']) && isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
-}
-
-/**
- * Check if user is logged in
- * @return bool Login status
- */
-function isLoggedIn() {
-    return isset($_SESSION['user_id']);
-}
-
-// ========================================
-// SECURITY FUNCTIONS
-// ========================================
-
-/**
- * Escape HTML special characters
- * @param string $string String to escape
- * @return string Escaped string
- */
-function escape($string) {
-    return htmlspecialchars($string ?? '', ENT_QUOTES, 'UTF-8');
-}
-
-/**
- * Generate CSRF token
- * @return string Token
- */
-function generateCSRFToken() {
-    if (!isset($_SESSION['csrf_token'])) {
-        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
-    }
-    return $_SESSION['csrf_token'];
-}
-
-/**
- * Verify CSRF token
- * @param string $token Token to verify
- * @return bool Valid status
- */
-function verifyCSRFToken($token) {
-    return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
-}
-
-// ========================================
-// FORMATTING FUNCTIONS
-// ========================================
-
-/**
- * Format price with currency symbol
- * @param float $price Price to format
- * @param string $currency Currency code (ILS, USD, EUR)
- * @return string Formatted price
- */
-function formatPrice($price, $currency = 'ILS') {
-    $price = (float)$price;
+    $watermark_path = UPLOAD_PATH . '/settings/' . $watermark_file;
+    if (!file_exists($watermark_path) || !file_exists($image_path)) return false;
     
-    $symbols = [
-        'ILS' => '₪',
-        'USD' => '$',
-        'EUR' => '€'
-    ];
+    $position = getSetting('watermark_position', 'bottom-right');
+    $opacity = (int)getSetting('watermark_opacity', 50);
     
-    $symbol = $symbols[$currency] ?? '₪';
+    $image_info = getimagesize($image_path);
+    $watermark_info = getimagesize($watermark_path);
     
-    return number_format($price, 2) . ' ' . $symbol;
-}
-
-/**
- * Format date in Arabic style
- * @param string $date Date string
- * @param string $format Format (default: Y-m-d)
- * @return string Formatted date
- */
-function formatDate($date, $format = 'Y-m-d') {
-    if (empty($date)) return '';
+    if (!$image_info || !$watermark_info) return false;
     
-    $timestamp = is_numeric($date) ? $date : strtotime($date);
-    return date($format, $timestamp);
-}
-
-/**
- * Convert English numbers to Arabic
- * @param string $string String with numbers
- * @return string String with Arabic numbers
- */
-function toArabicNumbers($string) {
-    $arabic_numbers = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
-    $english_numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-    return str_replace($english_numbers, $arabic_numbers, $string);
-}
-
-/**
- * Truncate text to specified length
- * @param string $text Text to truncate
- * @param int $length Maximum length
- * @param string $suffix Suffix (default: ...)
- * @return string Truncated text
- */
-function truncate($text, $length = 100, $suffix = '...') {
-    if (mb_strlen($text) <= $length) {
-        return $text;
-    }
-    return mb_substr($text, 0, $length) . $suffix;
-}
-
-// ========================================
-// UTILITY FUNCTIONS
-// ========================================
-
-/**
- * Redirect to a URL
- * @param string $url URL to redirect to
- * @param int $code HTTP status code (default: 302)
- */
-function redirect($url, $code = 302) {
-    header("Location: $url", true, $code);
-    exit;
-}
-
-/**
- * Get site setting value
- * @param string $key Setting key
- * @param mixed $default Default value
- * @return mixed Setting value
- */
-function getSetting($key, $default = null) {
-    global $db;
+    $image = createImageResource($image_path, $image_info[2]);
+    $watermark = createImageResource($watermark_path, $watermark_info[2]);
     
-    static $settings_cache = [];
+    if (!$image || !$watermark) return false;
     
-    if (!isset($settings_cache[$key])) {
-        $result = $db->fetchOne("SELECT setting_value FROM site_settings WHERE setting_key = ?", [$key]);
-        $settings_cache[$key] = $result ? $result['setting_value'] : $default;
+    $image_width = imagesx($image);
+    $image_height = imagesy($image);
+    $watermark_width = imagesx($watermark);
+    $watermark_height = imagesy($watermark);
+    
+    $max_wm_width = $image_width * 0.25;
+    $max_wm_height = $image_height * 0.25;
+    
+    if ($watermark_width > $max_wm_width || $watermark_height > $max_wm_height) {
+        $ratio = min($max_wm_width / $watermark_width, $max_wm_height / $watermark_height);
+        $new_wm_width = floor($watermark_width * $ratio);
+        $new_wm_height = floor($watermark_height * $ratio);
+        
+        $scaled_watermark = imagecreatetruecolor($new_wm_width, $new_wm_height);
+        imagealphablending($scaled_watermark, false);
+        imagesavealpha($scaled_watermark, true);
+        
+        imagecopyresampled($scaled_watermark, $watermark, 0, 0, 0, 0, 
+                          $new_wm_width, $new_wm_height, $watermark_width, $watermark_height);
+        
+        imagedestroy($watermark);
+        $watermark = $scaled_watermark;
+        $watermark_width = $new_wm_width;
+        $watermark_height = $new_wm_height;
     }
     
-    return $settings_cache[$key];
-}
-
-/**
- * Set site setting value
- * @param string $key Setting key
- * @param mixed $value Setting value
- * @return bool Success status
- */
-function setSetting($key, $value) {
-    global $db;
-    
-    return $db->execute(
-        "INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?",
-        [$key, $value, $value]
+    list($x, $y) = calculateWatermarkPosition(
+        $image_width, $image_height,
+        $watermark_width, $watermark_height,
+        $position
     );
-}
-
-/**
- * Generate random string
- * @param int $length String length
- * @return string Random string
- */
-function generateRandomString($length = 10) {
-    return bin2hex(random_bytes($length / 2));
-}
-
-/**
- * Send email (basic wrapper)
- * @param string $to Recipient email
- * @param string $subject Email subject
- * @param string $message Email message
- * @param array $headers Additional headers
- * @return bool Success status
- */
-function sendEmail($to, $subject, $message, $headers = []) {
-    $default_headers = [
-        'From' => getSetting('site_email', 'noreply@3dstore.com'),
-        'Content-Type' => 'text/html; charset=UTF-8'
-    ];
     
-    $headers = array_merge($default_headers, $headers);
-    $header_string = '';
-    foreach ($headers as $key => $value) {
-        $header_string .= "$key: $value\r\n";
+    imagecopymerge($image, $watermark, $x, $y, 0, 0, 
+                   $watermark_width, $watermark_height, $opacity);
+    
+    saveImageResource($image, $image_path, $image_info[2]);
+    
+    imagedestroy($image);
+    imagedestroy($watermark);
+    
+    return true;
+}
+
+function createImageResource($filepath, $type) {
+    switch ($type) {
+        case IMAGETYPE_JPEG: return imagecreatefromjpeg($filepath);
+        case IMAGETYPE_PNG: return imagecreatefrompng($filepath);
+        case IMAGETYPE_GIF: return imagecreatefromgif($filepath);
+        case IMAGETYPE_WEBP: return imagecreatefromwebp($filepath);
+        default: return false;
+    }
+}
+
+function saveImageResource($resource, $filepath, $type, $quality = 85) {
+    switch ($type) {
+        case IMAGETYPE_JPEG: return imagejpeg($resource, $filepath, $quality);
+        case IMAGETYPE_PNG: return imagepng($resource, $filepath, 9);
+        case IMAGETYPE_GIF: return imagegif($resource, $filepath);
+        case IMAGETYPE_WEBP: return imagewebp($resource, $filepath, $quality);
+        default: return false;
+    }
+}
+
+function calculateWatermarkPosition($image_width, $image_height, $wm_width, $wm_height, $position) {
+    $padding = 10;
+    
+    switch ($position) {
+        case 'top-left': return [$padding, $padding];
+        case 'top-center': return [($image_width - $wm_width) / 2, $padding];
+        case 'top-right': return [$image_width - $wm_width - $padding, $padding];
+        case 'center-left': return [$padding, ($image_height - $wm_height) / 2];
+        case 'center': return [($image_width - $wm_width) / 2, ($image_height - $wm_height) / 2];
+        case 'center-right': return [$image_width - $wm_width - $padding, ($image_height - $wm_height) / 2];
+        case 'bottom-left': return [$padding, $image_height - $wm_height - $padding];
+        case 'bottom-center': return [($image_width - $wm_width) / 2, $image_height - $wm_height - $padding];
+        case 'bottom-right':
+        default: return [$image_width - $wm_width - $padding, $image_height - $wm_height - $padding];
+    }
+}
+
+function deleteFile($filepath) {
+    if (file_exists($filepath) && is_file($filepath)) {
+        return unlink($filepath);
+    }
+    return false;
+}
+
+function humanFileSize($bytes, $decimals = 2) {
+    $units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    
+    for ($i = 0; $bytes > 1024 && $i < count($units) - 1; $i++) {
+        $bytes /= 1024;
     }
     
-    return mail($to, $subject, $message, $header_string);
-}
-
-/**
- * Log error to file
- * @param string $message Error message
- * @param string $file Log file name
- */
-function logError($message, $file = 'error.log') {
-    $log_path = __DIR__ . '/../logs/' . $file;
-    $timestamp = date('Y-m-d H:i:s');
-    $log_message = "[$timestamp] $message" . PHP_EOL;
-    
-    // Create logs directory if not exists
-    $log_dir = dirname($log_path);
-    if (!is_dir($log_dir)) {
-        mkdir($log_dir, 0755, true);
-    }
-    
-    file_put_contents($log_path, $log_message, FILE_APPEND);
-}
-
-/**
- * Get client IP address
- * @return string IP address
- */
-function getClientIP() {
-    $ip_keys = ['HTTP_CLIENT_IP', 'HTTP_X_FORWARDED_FOR', 'HTTP_X_FORWARDED', 'HTTP_FORWARDED_FOR', 'HTTP_FORWARDED', 'REMOTE_ADDR'];
-    
-    foreach ($ip_keys as $key) {
-        if (isset($_SERVER[$key])) {
-            $ip = $_SERVER[$key];
-            if (filter_var($ip, FILTER_VALIDATE_IP)) {
-                return $ip;
-            }
-        }
-    }
-    
-    return '0.0.0.0';
-}
-
-/**
- * Check if request is AJAX
- * @return bool AJAX status
- */
-function isAjax() {
-    return isset($_SERVER['HTTP_X_REQUESTED_WITH']) && 
-           strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
-}
-
-/**
- * Return JSON response
- * @param mixed $data Data to return
- * @param int $code HTTP status code
- */
-function jsonResponse($data, $code = 200) {
-    http_response_code($code);
-    header('Content-Type: application/json');
-    echo json_encode($data, JSON_UNESCAPED_UNICODE);
-    exit;
+    return round($bytes, $decimals) . ' ' . $units[$i];
 }
