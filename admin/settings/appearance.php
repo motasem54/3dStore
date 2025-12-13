@@ -1,129 +1,195 @@
 <?php
-declare(strict_types=1);
-require_once __DIR__ . '/../includes/init.php';
-require_once __DIR__ . '/../includes/auth.php';
-requireAdminRole();
+require_once '../../includes/store-init.php';
+if (!isAdmin()) redirect('/admin/login.php');
 
-$page_title = 'إعدادات المظهر والألوان';
-$active_page = 'settings';
+$page_title = 'إعدادات المظهر';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (empty($_POST['csrf']) || $_POST['csrf'] !== $_SESSION['csrf']) {
-        $error = 'خطأ في التحقق';
-    } else {
-        $settings = [
-            'primary_color' => sanitizeInput($_POST['primary_color'] ?? '#7c5cff'),
-            'secondary_color' => sanitizeInput($_POST['secondary_color'] ?? '#764ba2'),
-            'success_color' => sanitizeInput($_POST['success_color'] ?? '#10b981'),
-            'danger_color' => sanitizeInput($_POST['danger_color'] ?? '#ef4444'),
-        ];
-        
-        if (!empty($_FILES['logo']['name'])) {
-            $result = uploadFile($_FILES['logo'], 'uploads/settings/', ['jpg', 'jpeg', 'png', 'webp', 'svg']);
-            if ($result['success']) {
-                $settings['site_logo'] = 'uploads/settings/' . $result['filename'];
-            }
-        }
-        
-        try {
-            foreach ($settings as $key => $value) {
-                $existing = $db->fetch("SELECT id FROM settings WHERE setting_key = ?", [$key]);
-                if ($existing) {
-                    $db->query("UPDATE settings SET setting_value = ?, updated_at = NOW() WHERE setting_key = ?", [$value, $key]);
-                } else {
-                    $db->query("INSERT INTO settings (setting_key, setting_value) VALUES (?, ?)", [$key, $value]);
-                }
-            }
-            $success = 'تم حفظ إعدادات المظهر بنجاح';
-        } catch (Exception $e) {
-            $error = 'حدث خطأ أثناء الحفظ';
+    $updates = [];
+    
+    // Handle file uploads
+    if (!empty($_FILES['site_logo']['tmp_name'])) {
+        $logo = uploadFile($_FILES['site_logo'], 'settings');
+        if ($logo) $updates['site_logo'] = $logo;
+    }
+    
+    if (!empty($_FILES['site_favicon']['tmp_name'])) {
+        $favicon = uploadFile($_FILES['site_favicon'], 'settings');
+        if ($favicon) $updates['site_favicon'] = $favicon;
+    }
+    
+    // Text settings
+    $text_fields = ['site_name', 'primary_color', 'secondary_color', 'success_color', 'danger_color', 'homepage_latest', 'homepage_bestsellers', 'homepage_3d'];
+    foreach ($text_fields as $field) {
+        if (isset($_POST[$field])) {
+            $updates[$field] = $_POST[$field];
         }
     }
+    
+    // Update database
+    foreach ($updates as $key => $value) {
+        $db->execute(
+            "INSERT INTO site_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?",
+            [$key, $value, $value]
+        );
+    }
+    
+    $_SESSION['success'] = 'تم تحديث إعدادات المظهر بنجاح';
+    redirect('/admin/settings/appearance.php');
 }
 
-$appearance = [];
-$keys = ['primary_color', 'secondary_color', 'success_color', 'danger_color', 'site_logo'];
-foreach ($keys as $key) {
-    $result = $db->fetch("SELECT setting_value FROM settings WHERE setting_key = ?", [$key]);
-    $appearance[$key] = $result['setting_value'] ?? '';
+// Get current settings
+$settings_data = $db->fetchAll("SELECT setting_key, setting_value FROM site_settings");
+$settings = [];
+foreach ($settings_data as $row) {
+    $settings[$row['setting_key']] = $row['setting_value'];
 }
 
-include __DIR__ . '/../includes/header.php';
+include '../includes/header.php';
 ?>
 
-<?php if (isset($success)): ?>
-<div class="alert alert-success"><i class="bi bi-check-circle"></i> <?php echo $success; ?></div>
-<?php endif; ?>
-<?php if (isset($error)): ?>
-<div class="alert alert-danger"><i class="bi bi-exclamation-circle"></i> <?php echo $error; ?></div>
-<?php endif; ?>
-
-<div class="glass-card">
-    <div class="card-header space-between">
-        <h4><i class="bi bi-palette"></i> إعدادات المظهر والألوان</h4>
-        <a href="index.php" class="btn-sm"><i class="bi bi-arrow-right"></i> رجوع</a>
-    </div>
-    
-    <div class="card-body">
-        <form method="POST" enctype="multipart/form-data" class="appearance-form">
-            <input type="hidden" name="csrf" value="<?php echo escape($_SESSION['csrf']); ?>">
-            
-            <div class="form-section">
-                <h5>شعار الموقع</h5>
-                <div class="logo-upload">
-                    <?php if ($appearance['site_logo']): ?>
-                    <img src="<?php echo BASE_URL . '/' . $appearance['site_logo']; ?>" alt="Logo" class="current-logo">
-                    <?php endif; ?>
-                    <input type="file" name="logo" class="form-control" accept="image/*">
-                    <small class="text-muted">الصيغ المدعومة: PNG, JPG, SVG (الحجم الموصى به: 200×60 بكسل)</small>
-                </div>
-            </div>
-            
-            <div class="form-section">
-                <h5>الألوان الرئيسية</h5>
-                <div class="colors-grid">
-                    <div class="color-picker">
-                        <label>اللون الأساسي</label>
-                        <input type="color" name="primary_color" value="<?php echo $appearance['primary_color'] ?: '#7c5cff'; ?>">
-                        <span class="color-value"><?php echo $appearance['primary_color'] ?: '#7c5cff'; ?></span>
-                    </div>
-                    <div class="color-picker">
-                        <label>اللون الثانوي</label>
-                        <input type="color" name="secondary_color" value="<?php echo $appearance['secondary_color'] ?: '#764ba2'; ?>">
-                        <span class="color-value"><?php echo $appearance['secondary_color'] ?: '#764ba2'; ?></span>
-                    </div>
-                    <div class="color-picker">
-                        <label>لون النجاح</label>
-                        <input type="color" name="success_color" value="<?php echo $appearance['success_color'] ?: '#10b981'; ?>">
-                        <span class="color-value"><?php echo $appearance['success_color'] ?: '#10b981'; ?></span>
-                    </div>
-                    <div class="color-picker">
-                        <label>لون الخطر</label>
-                        <input type="color" name="danger_color" value="<?php echo $appearance['danger_color'] ?: '#ef4444'; ?>">
-                        <span class="color-value"><?php echo $appearance['danger_color'] ?: '#ef4444'; ?></span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="form-actions">
-                <button type="submit" class="btn-primary"><i class="bi bi-check-circle"></i> حفظ التغييرات</button>
-            </div>
-        </form>
-    </div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-palette text-primary"></i> إعدادات المظهر</h2>
 </div>
 
-<style>
-.appearance-form { max-width: 800px; }
-.form-section { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px; margin-bottom: 20px; }
-.form-section h5 { margin: 0 0 16px 0; color: var(--primary); }
-.logo-upload { display: flex; flex-direction: column; gap: 12px; }
-.current-logo { max-width: 200px; height: auto; background: white; padding: 10px; border-radius: 8px; }
-.colors-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; }
-.color-picker { display: flex; flex-direction: column; gap: 8px; }
-.color-picker label { font-size: 14px; color: var(--text-secondary); }
-.color-picker input[type="color"] { width: 100%; height: 50px; border: 2px solid var(--glass-border); border-radius: 8px; cursor: pointer; }
-.color-value { font-size: 13px; color: var(--text-muted); text-align: center; }
-.form-actions { display: flex; gap: 12px; justify-content: flex-end; }
-</style>
+<?php if (isset($_SESSION['success'])): ?>
+<div class="alert alert-success alert-dismissible fade show">
+    <i class="bi bi-check-circle"></i> <?php echo $_SESSION['success']; unset($_SESSION['success']); ?>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+<?php endif; ?>
 
-<?php include __DIR__ . '/../includes/footer.php'; ?>
+<form method="POST" enctype="multipart/form-data">
+    <div class="row g-4">
+        
+        <!-- General Settings -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0"><i class="bi bi-gear text-primary"></i> إعدادات عامة</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">اسم المتجر</label>
+                        <input type="text" name="site_name" class="form-control" value="<?php echo escape($settings['site_name'] ?? '3D Store'); ?>" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">شعار المتجر</label>
+                        <?php if (!empty($settings['site_logo'])): ?>
+                        <div class="mb-2">
+                            <img src="<?php echo UPLOAD_URL . '/settings/' . $settings['site_logo']; ?>" style="max-height:80px" class="img-thumbnail">
+                        </div>
+                        <?php endif; ?>
+                        <input type="file" name="site_logo" class="form-control" accept="image/*">
+                        <small class="text-muted">المقاس المثالي: 200x60 بكسل</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">أيقونة المتجر (Favicon)</label>
+                        <?php if (!empty($settings['site_favicon'])): ?>
+                        <div class="mb-2">
+                            <img src="<?php echo UPLOAD_URL . '/settings/' . $settings['site_favicon']; ?>" style="max-height:32px" class="img-thumbnail">
+                        </div>
+                        <?php endif; ?>
+                        <input type="file" name="site_favicon" class="form-control" accept="image/*">
+                        <small class="text-muted">المقاس المثالي: 32x32 بكسل</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Colors -->
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0"><i class="bi bi-palette-fill text-primary"></i> الألوان</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">اللون الأساسي (Primary)</label>
+                        <div class="input-group">
+                            <input type="color" name="primary_color" class="form-control form-control-color" value="<?php echo $settings['primary_color'] ?? '#3b82f6'; ?>">
+                            <input type="text" class="form-control" value="<?php echo $settings['primary_color'] ?? '#3b82f6'; ?>" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">اللون الثانوي (Secondary)</label>
+                        <div class="input-group">
+                            <input type="color" name="secondary_color" class="form-control form-control-color" value="<?php echo $settings['secondary_color'] ?? '#8b5cf6'; ?>">
+                            <input type="text" class="form-control" value="<?php echo $settings['secondary_color'] ?? '#8b5cf6'; ?>" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">لون النجاح (Success)</label>
+                        <div class="input-group">
+                            <input type="color" name="success_color" class="form-control form-control-color" value="<?php echo $settings['success_color'] ?? '#10b981'; ?>">
+                            <input type="text" class="form-control" value="<?php echo $settings['success_color'] ?? '#10b981'; ?>" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">لون الخطر (Danger)</label>
+                        <div class="input-group">
+                            <input type="color" name="danger_color" class="form-control form-control-color" value="<?php echo $settings['danger_color'] ?? '#ef4444'; ?>">
+                            <input type="text" class="form-control" value="<?php echo $settings['danger_color'] ?? '#ef4444'; ?>" readonly>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info mb-0">
+                        <small><i class="bi bi-info-circle"></i> سيتم تطبيق الألوان على كامل الموقع</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Homepage Display -->
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0"><i class="bi bi-house text-primary"></i> إعدادات الصفحة الرئيسية</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">عدد أحدث المنتجات</label>
+                            <input type="number" name="homepage_latest" class="form-control" min="4" max="20" value="<?php echo $settings['homepage_latest'] ?? 10; ?>">
+                            <small class="text-muted">من 4 إلى 20 منتج</small>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">عدد الأكثر مبيعاً</label>
+                            <input type="number" name="homepage_bestsellers" class="form-control" min="4" max="16" value="<?php echo $settings['homepage_bestsellers'] ?? 8; ?>">
+                            <small class="text-muted">من 4 إلى 16 منتج</small>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">عدد منتجات 3D</label>
+                            <input type="number" name="homepage_3d" class="form-control" min="4" max="12" value="<?php echo $settings['homepage_3d'] ?? 4; ?>">
+                            <small class="text-muted">من 4 إلى 12 منتج</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+    
+    <div class="text-center mt-4">
+        <button type="submit" class="btn btn-primary btn-lg px-5">
+            <i class="bi bi-save"></i> حفظ جميع التغييرات
+        </button>
+    </div>
+</form>
+
+<script>
+document.querySelectorAll('input[type="color"]').forEach(input => {
+    input.addEventListener('change', function() {
+        this.nextElementSibling.value = this.value;
+    });
+});
+</script>
+
+<?php include '../includes/footer.php'; ?>
