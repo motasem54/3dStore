@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>متجر إلكتروني احترافي - Demo الكامل</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+    <style>
+        :root { --primary: #3b82f6; --secondary: #8b5cf6; --success: #10b981; --danger: #ef4444; --dark: #0f172a; --text: #1e293b; --text-light: #64748b; --border: #e2e8f0; --bg-light: #f8fafc; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #ffffff; color: var(--text); line-height: 1.6; overflow-x: hidden; padding-bottom: 70px; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        
+        /* Mobile Menu */
+        .mobile-menu-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(5px); z-index: 9998; opacity: 0; visibility: hidden; transition: all 0.3s; }
+        .mobile-menu-overlay.active { opacity: 1; visibility: visible; }
+        .mobile-menu { position: fixed; top: 0; right: -100%; width: 320px; max-width: 85vw; height: 100vh; background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%); box-shadow: -10px 0 40px rgba(0,0,0,0.2); z-index: 9999; transition: right 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); display: flex; flex-direction: column; overflow-y: auto; }
+        .mobile-menu.active { right: 0; }
+        .mobile-menu-header { padding: 24px 20px; background: linear-gradient(135deg, var(--primary), var(--secondary)); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .mobile-logo { display: flex; align-items: center; gap: 12px; color: white; font-size: 20px; font-weight: 700; }
+        .mobile-logo .logo-icon { width: 45px; height: 45px; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+        .mobile-close { width: 40px; height: 40px; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); border: none; border-radius: 10px; color: white; font-size: 20px; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; }
+        .mobile-close:hover { background: rgba(255,255,255,0.3); transform: rotate(90deg); }
+        .mobile-nav { padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 4px; }
+        .mobile-nav-link { display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: white; border-radius: 12px; color: var(--text); text-decoration: none; font-weight: 500; font-size: 15px; transition: all 0.3s; box-shadow: 0 2px 6px rgba(0,0,0,0.05); position: relative; overflow: hidden; }
+        .mobile-nav-link::before { content: ''; position: absolute; top: 0; right: -100%; width: 100%; height: 100%; background: linear-gradient(135deg, var(--primary), var(--secondary)); transition: right 0.4s; z-index: 0; }
+        .mobile-nav-link:hover::before { right: 0; }
+        .mobile-nav-link i { font-size: 20px; color: var(--primary); transition: 0.3s; z-index: 1; position: relative; }
+        .mobile-nav-link span { z-index: 1; position: relative; transition: 0.3s; }
+        .mobile-nav-link:hover { transform: translateX(-8px); box-shadow: 0 6px 16px rgba(59,130,246,0.3); }
+        .mobile-nav-link:hover i, .mobile-nav-link:hover span { color: white; }
+        .mobile-menu-footer { padding: 20px; background: rgba(15,23,42,0.03); border-top: 1px solid var(--border); }
+        .mobile-contact h4 { font-size: 15px; margin-bottom: 14px; color: var(--dark); font-weight: 600; }
+        .contact-link { display: flex; align-items: center; gap: 10px; padding: 10px 0; color: var(--text); text-decoration: none; font-size: 14px; transition: 0.3s; }
+        .contact-link i { width: 32px; height: 32px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; }
+        .contact-link:hover { color: var(--primary); padding-right: 8px; }
+        .mobile-social { display: flex; gap: 10px; justify-content: center; padding-top: 16px; border-top: 1px solid var(--border); }
+        .social-btn { width: 44px; height: 44px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; text-decoration: none; font-size: 18px; transition: 0.3s; }
+        .social-btn:hover { transform: translateY(-4px) scale(1.1); box-shadow: 0 8px 20px rgba(59,130,246,0.4); }
+        
+        /* Mobile Bottom Navbar */
+        .mobile-bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; box-shadow: 0 -2px 10px rgba(0,0,0,0.1); z-index: 1000; display: none; }
+        .mobile-bottom-nav-inner { display: flex; justify-content: space-around; align-items: center; padding: 8px 0; }
+        .bottom-nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px; color: var(--text-light); text-decoration: none; transition: 0.3s; font-size: 11px; }
+        .bottom-nav-item i { font-size: 22px; }
+        .bottom-nav-item.active { color: var(--primary); }
+        .bottom-nav-item .nav-badge { position: absolute; top: 0; right: 50%; transform: translateX(8px); background: var(--danger); color: white; width: 16px; height: 16px; border-radius: 50%; font-size: 9px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+        
+        /* Floating Buttons */
+        .floating-buttons { position: fixed; left: 20px; bottom: 90px; z-index: 999; display: flex; flex-direction: column; gap: 12px; }
+        .floating-btn { width: 56px; height: 56px; border-radius: 50%; border: none; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.2); transition: all 0.3s; display: flex; align-items: center; justify-content: center; font-size: 24px; color: white; animation: pulse 2s infinite; }
+        .floating-btn:hover { transform: scale(1.1); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+        .floating-btn.whatsapp { background: linear-gradient(135deg, #25d366, #128c7e); }
+        .floating-btn.ai-chat { background: linear-gradient(135deg, var(--primary), var(--secondary)); }
+        @keyframes pulse { 0%, 100% { box-shadow: 0 4px 12px rgba(0,0,0,0.2); } 50% { box-shadow: 0 4px 20px rgba(59,130,246,0.6); } }
+        
+        .top-bar { background: var(--dark); color: white; padding: 8px 0; font-size: 13px; }
+        .top-bar-content { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .top-bar-left { display: flex; align-items: center; gap: 8px; }
+        .top-bar-right { display: flex; gap: 16px; }
+        .lang-switcher a, .currency-switcher a { color: rgba(255,255,255,0.7); text-decoration: none; transition: 0.3s; }
+        .lang-switcher a.active, .currency-switcher a.active { color: white; font-weight: 600; }
+        .main-header { background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 1000; }
+        .header-content { display: flex; align-items: center; justify-content: space-between; padding: 16px 0; gap: 20px; }
+        .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--dark); font-weight: 700; font-size: 20px; }
+        .logo-icon { width: 40px; height: 40px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; font-size: 20px; }
+        .main-nav { display: flex; gap: 24px; }
+        .nav-link { color: var(--text); text-decoration: none; font-weight: 500; transition: 0.3s; white-space: nowrap; }
+        .nav-link:hover { color: var(--primary); }
+        .header-actions { display: flex; gap: 10px; align-items: center; }
+        .header-icon { width: 40px; height: 40px; border-radius: 10px; background: var(--bg-light); border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.3s; position: relative; color: var(--text); text-decoration: none; }
+        .header-icon:hover { background: var(--primary); color: white; transform: translateY(-2px); }
+        .header-icon .badge { position: absolute; top: -4px; left: -4px; background: var(--danger); color: white; width: 18px; height: 18px; border-radius: 50%; font-size: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+        .mobile-toggle { display: none; }
+        .hero-slider { position: relative; height: 500px; }
+        .swiper { width: 100%; height: 100%; }
+        .swiper-slide { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center; position: relative; overflow: hidden; }
+        .slide-content { text-align: center; color: white; z-index: 2; padding: 40px; }
+        .slide-title { font-size: 48px; font-weight: 800; margin-bottom: 20px; text-shadow: 0 2px 10px rgba(0,0,0,0.2); }
+        .slide-desc { font-size: 20px; margin-bottom: 30px; opacity: 0.95; }
+        .slide-btn { padding: 14px 32px; background: white; color: var(--primary); border-radius: 50px; text-decoration: none; font-weight: 600; display: inline-block; transition: 0.3s; }
+        .slide-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(255,255,255,0.3); }
+        .swiper-pagination-bullet { background: white; opacity: 0.5; }
+        .swiper-pagination-bullet-active { opacity: 1; width: 30px; border-radius: 5px; }
+        
+        .item-slider { padding: 60px 0; background: white; }
+        .section-title { font-size: 32px; font-weight: 700; text-align: center; margin-bottom: 40px; color: var(--dark); }
+        .products-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; }
+        .product-card { background: white; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; transition: all 0.3s; display: flex; flex-direction: column; height: 100%; }
+        .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.1); border-color: var(--primary); }
+        .product-img { width: 100%; height: 200px; overflow: hidden; position: relative; background: #f8f9fa; }
+        .product-img img { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; }
+        .product-card:hover .product-img img { transform: scale(1.05); }
+        .product-badge { position: absolute; top: 12px; right: 12px; background: var(--danger); color: white; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .product-actions { position: absolute; top: 12px; left: 12px; display: flex; flex-direction: column; gap: 6px; opacity: 0; transition: 0.3s; }
+        .product-card:hover .product-actions { opacity: 1; }
+        .product-action-btn { width: 32px; height: 32px; background: white; border: none; border-radius: 8px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: 0.3s; display: flex; align-items: center; justify-content: center; }
+        .product-action-btn:hover { background: var(--primary); color: white; }
+        .product-body { padding: 14px; flex: 1; display: flex; flex-direction: column; }
+        .product-title { font-size: 14px; font-weight: 600; color: var(--dark); margin-bottom: 8px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; height: 40px; line-height: 20px; }
+        .product-rating { display: flex; align-items: center; gap: 4px; margin-bottom: 8px; font-size: 12px; }
+        .product-rating .stars { color: #fbbf24; display: flex; gap: 2px; }
+        .product-rating .count { color: var(--text-light); font-size: 11px; }
+        .product-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; gap: 8px; }
+        .product-prices { display: flex; align-items: center; gap: 6px; flex-direction: row-reverse; flex-wrap: wrap; }
+        .product-price { font-size: 18px; font-weight: 700; color: var(--primary); }
+        .product-old-price { font-size: 13px; color: var(--text-light); text-decoration: line-through; }
+        .product-btn { padding: 6px 12px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: 600; transition: 0.3s; white-space: nowrap; }
+        .product-btn:hover { background: var(--secondary); transform: scale(1.05); }
+        
+        .categories-section { padding: 60px 0; background: var(--bg-light); }
+        .categories-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 20px; }
+        .cat-card { background: white; border-radius: 16px; padding: 30px 20px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.06); transition: 0.3s; text-decoration: none; color: var(--text); }
+        .cat-card:hover { transform: translateY(-8px); box-shadow: 0 8px 20px rgba(0,0,0,0.12); }
+        .cat-icon { width: 70px; height: 70px; background: linear-gradient(135deg, var(--primary), var(--secondary)); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 32px; color: white; }
+        .cat-name { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+        .cat-count { font-size: 13px; color: var(--text-light); }
+        .products-section { padding: 60px 0; }
+        .products-section.alt { background: var(--bg-light); }
+        .features-section { padding: 60px 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 30px; }
+        .feature-card { text-align: center; }
+        .feature-icon { width: 70px; height: 70px; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; font-size: 28px; }
+        .feature-title { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+        .feature-desc { font-size: 14px; opacity: 0.9; }
+        .main-footer { background: #0a0e27; color: white; padding: 60px 0 0; }
+        .footer-top { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1.5fr; gap: 40px; margin-bottom: 50px; }
+        .footer-logo { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 700; margin-bottom: 20px; }
+        .footer-desc { color: rgba(255,255,255,0.7); line-height: 1.8; margin-bottom: 20px; }
+        .social-links { display: flex; gap: 10px; }
+        .social-link { width: 42px; height: 42px; background: rgba(255,255,255,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; color: white; text-decoration: none; transition: 0.3s; font-size: 18px; }
+        .social-link:hover { background: var(--primary); transform: translateY(-3px); }
+        .footer-col h4 { font-size: 18px; margin-bottom: 20px; font-weight: 600; }
+        .footer-links { list-style: none; }
+        .footer-links li { margin-bottom: 12px; }
+        .footer-links a { color: rgba(255,255,255,0.7); text-decoration: none; transition: 0.3s; display: flex; align-items: center; gap: 8px; }
+        .footer-links a:hover { color: white; padding-right: 5px; }
+        .footer-contact { display: flex; flex-direction: column; gap: 12px; }
+        .contact-item { display: flex; align-items: center; gap: 10px; color: rgba(255,255,255,0.8); font-size: 14px; }
+        .contact-icon { width: 36px; height: 36px; background: rgba(255,255,255,0.1); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        .newsletter-form { display: flex; gap: 8px; margin-top: 16px; }
+        .newsletter-form input { flex: 1; padding: 12px 16px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); border-radius: 10px; color: white; }
+        .newsletter-form button { padding: 12px 20px; background: var(--primary); border: none; border-radius: 10px; color: white; cursor: pointer; font-weight: 600; transition: 0.3s; }
+        .newsletter-form button:hover { background: var(--secondary); }
+        .footer-middle { border-top: 1px solid rgba(255,255,255,0.1); padding: 30px 0; }
+        .payment-methods { display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; }
+        .payment-item { padding: 10px 20px; background: rgba(255,255,255,0.05); border-radius: 8px; font-size: 24px; }
+        .footer-bottom { border-top: 1px solid rgba(255,255,255,0.1); padding: 20px 0; display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: rgba(255,255,255,0.7); flex-wrap: wrap; gap: 10px; }
+        .footer-links-inline { display: flex; gap: 20px; flex-wrap: wrap; }
+        .footer-links-inline a { color: rgba(255,255,255,0.7); text-decoration: none; transition: 0.3s; }
+        .footer-links-inline a:hover { color: white; }
+        @media (max-width: 768px) {
+            body { padding-bottom: 70px; }
+            .mobile-bottom-nav { display: block; }
+            .floating-buttons { bottom: 80px; left: 16px; }
+            .floating-btn { width: 50px; height: 50px; font-size: 20px; }
+            .top-bar-content { font-size: 11px; }
+            .mobile-toggle { display: flex; }
+            .main-nav, .header-actions { display: none; }
+            .slide-title { font-size: 28px; }
+            .slide-desc { font-size: 16px; }
+            .hero-slider { height: 350px; }
+            .section-title { font-size: 24px; }
+            .products-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .product-img { height: 160px; }
+            .product-title { font-size: 13px; }
+            .product-price { font-size: 16px; }
+            .footer-top { grid-template-columns: 1fr; gap: 30px; }
+            .footer-bottom { flex-direction: column; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="mobile-menu-overlay" id="mobileMenuOverlay" onclick="closeMobileMenu()"></div>
+
+<div class="mobile-menu" id="mobileMenu">
+    <div class="mobile-menu-header">
+        <div class="mobile-logo"><div class="logo-icon"><i class="bi bi-shop"></i></div><span>متجري 3D</span></div>
+        <button class="mobile-close" onclick="closeMobileMenu()"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <nav class="mobile-nav">
+        <a href="#" class="mobile-nav-link"><i class="bi bi-house-door"></i> <span>الرئيسية</span></a>
+        <a href="#" class="mobile-nav-link"><i class="bi bi-grid"></i> <span>المنتجات</span></a>
+        <a href="#3d-section" class="mobile-nav-link"><i class="bi bi-box"></i> <span>منتجات 3D</span></a>
+        <a href="#" class="mobile-nav-link"><i class="bi bi-fire"></i> <span>الأكثر مبيعاً</span></a>
+        <a href="#" class="mobile-nav-link"><i class="bi bi-tag"></i> <span>عروض خاصة</span></a>
+        <a href="spin-wheel.html" class="mobile-nav-link"><i class="bi bi-gift"></i> <span>دولاب الحظ</span></a>
+        <a href="#" class="mobile-nav-link"><i class="bi bi-box-seam"></i> <span>تتبع طلبك</span></a>
+        <a href="#" class="mobile-nav-link"><i class="bi bi-person-circle"></i> <span>حسابي</span></a>
+    </nav>
+    <div class="mobile-menu-footer">
+        <div class="mobile-contact">
+            <h4>تواصل معنا</h4>
+            <a href="tel:+970599123456" class="contact-link"><i class="bi bi-telephone"></i> <span>+970 599 123 456</span></a>
+            <a href="mailto:info@store.ps" class="contact-link"><i class="bi bi-envelope"></i> <span>info@store.ps</span></a>
+            <a href="#" class="contact-link"><i class="bi bi-geo-alt"></i> <span>رام الله، فلسطين</span></a>
+        </div>
+        <div class="mobile-social">
+            <a href="#" class="social-btn"><i class="bi bi-facebook"></i></a>
+            <a href="#" class="social-btn"><i class="bi bi-instagram"></i></a>
+            <a href="#" class="social-btn"><i class="bi bi-whatsapp"></i></a>
+            <a href="#" class="social-btn"><i class="bi bi-youtube"></i></a>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile Bottom Navbar -->
+<nav class="mobile-bottom-nav">
+    <div class="mobile-bottom-nav-inner">
+        <a href="#" class="bottom-nav-item active">
+            <i class="bi bi-house-door-fill"></i>
+            <span>الرئيسية</span>
+        </a>
+        <a href="#" class="bottom-nav-item">
+            <i class="bi bi-grid-fill"></i>
+            <span>الأقسام</span>
+        </a>
+        <a href="#" class="bottom-nav-item" style="position: relative;">
+            <i class="bi bi-cart3"></i>
+            <span>السلة</span>
+            <span class="nav-badge">5</span>
+        </a>
+        <a href="#" class="bottom-nav-item" style="position: relative;">
+            <i class="bi bi-heart"></i>
+            <span>المفضلة</span>
+            <span class="nav-badge">3</span>
+        </a>
+        <a href="#" class="bottom-nav-item">
+            <i class="bi bi-person-circle"></i>
+            <span>حسابي</span>
+        </a>
+    </div>
+</nav>
+
+<!-- Floating Buttons -->
+<div class="floating-buttons">
+    <button class="floating-btn ai-chat" onclick="openAIChat()" title="تحدث مع مساعد ذكي">
+        <i class="bi bi-robot"></i>
+    </button>
+    <a href="https://wa.me/970599123456" target="_blank" class="floating-btn whatsapp" title="واتساب">
+        <i class="bi bi-whatsapp"></i>
+    </a>
+</div>
+
+<div class="top-bar">
+    <div class="container"><div class="top-bar-content"><div class="top-bar-left"><i class="bi bi-truck"></i><span>شحن مجاني على جميع الطلبات فوق 200₪</span></div><div class="top-bar-right"><div class="lang-switcher"><a href="#" class="active">AR</a><span>|</span><a href="#">EN</a></div><div class="currency-switcher"><a href="#" class="active">₪</a><span>|</span><a href="#">$</a></div></div></div></div>
+</div>
+
+<header class="main-header">
+    <div class="container"><div class="header-content">
+        <button class="header-icon mobile-toggle" onclick="openMobileMenu()"><i class="bi bi-list"></i></button>
+        <a href="#" class="logo"><div class="logo-icon"><i class="bi bi-box-seam"></i></div><span>متجري 3D</span></a>
+        <nav class="main-nav">
+            <a href="#" class="nav-link">الرئيسية</a>
+            <a href="#" class="nav-link">المنتجات</a>
+            <a href="#3d-section" class="nav-link">منتجات 3D</a>
+            <a href="#" class="nav-link">الأكثر مبيعاً</a>
+            <a href="spin-wheel.html" class="nav-link">دولاب الحظ</a>
+            <a href="#" class="nav-link">تتبع طلبك</a>
+        </nav>
+        <div class="header-actions">
+            <button class="header-icon"><i class="bi bi-search"></i></button>
+            <a href="#" class="header-icon"><i class="bi bi-heart"></i><span class="badge">3</span></a>
+            <a href="#" class="header-icon"><i class="bi bi-arrow-left-right"></i><span class="badge">2</span></a>
+            <a href="#" class="header-icon"><i class="bi bi-cart3"></i><span class="badge">5</span></a>
+            <a href="#" class="header-icon"><i class="bi bi-person-circle"></i></a>
+        </div>
+    </div></div>
+</header>
+
+<section class="hero-slider">
+    <div class="swiper heroSwiper"><div class="swiper-wrapper">
+        <div class="swiper-slide" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);"><div class="slide-content"><h1 class="slide-title">عروض الصيف الحصرية 🔥</h1><p class="slide-desc">خصم يصل إلى 50% على جميع المنتجات</p><a href="#" class="slide-btn">تسوق الآن <i class="bi bi-arrow-left"></i></a></div></div>
+        <div class="swiper-slide" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);"><div class="slide-content"><h1 class="slide-title">مجموعة جديدة 2025 ✨</h1><p class="slide-desc">اكتشف أحدث المنتجات لهذا الموسم</p><a href="#" class="slide-btn">استكشف الآن <i class="bi bi-arrow-left"></i></a></div></div>
+        <div class="swiper-slide" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);"><div class="slide-content"><h1 class="slide-title">شحن مجاني 🚚</h1><p class="slide-desc">على جميع الطلبات فوق 200 شيكل</p><a href="#" class="slide-btn">اطلب الآن <i class="bi bi-arrow-left"></i></a></div></div>
+    </div><div class="swiper-pagination"></div></div>
+</section>
+
+<section class="item-slider">
+    <div class="container">
+        <h2 class="section-title">أحدث المنتجات ⚡</h2>
+        <div class="products-grid">
+            <div class="product-card">
+                <div class="product-img">
+                    <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400" alt="سماعات">
+                    <span class="product-badge">-30%</span>
+                    <div class="product-actions">
+                        <button class="product-action-btn"><i class="bi bi-heart"></i></button>
+                        <button class="product-action-btn"><i class="bi bi-eye"></i></button>
+                    </div>
+                </div>
+                <div class="product-body">
+                    <div class="product-title">سماعات لاسلكية عالية الجودة</div>
+                    <div class="product-rating">
+                        <div class="stars"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i></div>
+                        <span class="count">(124)</span>
+                    </div>
+                    <div class="product-footer">
+                        <div class="product-prices">
+                            <span class="product-price">199 ₪</span>
+                            <span class="product-old-price">285 ₪</span>
+                        </div>
+                        <button class="product-btn">أضف</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="product-card">
+                <div class="product-img">
+                    <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400" alt="ساعة">
+                    <div class="product-actions">
+                        <button class="product-action-btn"><i class="bi bi-heart"></i></button>
+                        <button class="product-action-btn"><i class="bi bi-eye"></i></button>
+                    </div>
+                </div>
+                <div class="product-body">
+                    <div class="product-title">ساعة ذكية رياضية</div>
+                    <div class="product-rating">
+                        <div class="stars"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></div>
+                        <span class="count">(89)</span>
+                    </div>
+                    <div class="product-footer">
+                        <div class="product-prices"><span class="product-price">349 ₪</span></div>
+                        <button class="product-btn">أضف</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="product-card">
+                <div class="product-img">
+                    <img src="https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400" alt="حقيبة">
+                    <span class="product-badge">-20%</span>
+                    <div class="product-actions">
+                        <button class="product-action-btn"><i class="bi bi-heart"></i></button>
+                        <button class="product-action-btn"><i class="bi bi-eye"></i></button>
+                    </div>
+                </div>
+                <div class="product-body">
+                    <div class="product-title">حقيبة ظهر عصرية</div>
+                    <div class="product-rating">
+                        <div class="stars"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star"></i></div>
+                        <span class="count">(67)</span>
+                    </div>
+                    <div class="product-footer">
+                        <div class="product-prices">
+                            <span class="product-price">159 ₪</span>
+                            <span class="product-old-price">199 ₪</span>
+                        </div>
+                        <button class="product-btn">أضف</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="product-card">
+                <div class="product-img">
+                    <img src="https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=400" alt="كاميرا">
+                    <div class="product-actions">
+                        <button class="product-action-btn"><i class="bi bi-heart"></i></button>
+                        <button class="product-action-btn"><i class="bi bi-eye"></i></button>
+                    </div>
+                </div>
+                <div class="product-body">
+                    <div class="product-title">كاميرا رقمية 4K</div>
+                    <div class="product-rating">
+                        <div class="stars"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></div>
+                        <span class="count">(142)</span>
+                    </div>
+                    <div class="product-footer">
+                        <div class="product-prices"><span class="product-price">899 ₪</span></div>
+                        <button class="product-btn">أضف</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="product-card">
+                <div class="product-img">
+                    <img src="https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400" alt="نظارة">
+                    <span class="product-badge">-40%</span>
+                    <div class="product-actions">
+                        <button class="product-action-btn"><i class="bi bi-heart"></i></button>
+                        <button class="product-action-btn"><i class="bi bi-eye"></i></button>
+                    </div>
+                </div>
+                <div class="product-body">
+                    <div class="product-title">نظارة شمسية راقية</div>
+                    <div class="product-rating">
+                        <div class="stars"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star"></i></div>
+                        <span class="count">(53)</span>
+                    </div>
+                    <div class="product-footer">
+                        <div class="product-prices">
+                            <span class="product-price">89 ₪</span>
+                            <span class="product-old-price">149 ₪</span>
+                        </div>
+                        <button class="product-btn">أضف</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="product-card">
+                <div class="product-img">
+                    <img src="https://images.unsplash.com/photo-1527814050087-3793815479db?w=400" alt="ماوس">
+                    <div class="product-actions">
+                        <button class="product-action-btn"><i class="bi bi-heart"></i></button>
+                        <button class="product-action-btn"><i class="bi bi-eye"></i></button>
+                    </div>
+                </div>
+                <div class="product-body">
+                    <div class="product-title">ماوس جيمر احترافي</div>
+                    <div class="product-rating">
+                        <div class="stars"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i></div>
+                        <span class="count">(98)</span>
+                    </div>
+                    <div class="product-footer">
+                        <div class="product-prices"><span class="product-price">129 ₪</span></div>
+                        <button class="product-btn">أضف</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="product-card">
+                <div class="product-img">
+                    <img src="https://images.unsplash.com/photo-1546868871-7041f2a55e12?w=400" alt="ساعة">
+                    <div class="product-actions">
+                        <button class="product-action-btn"><i class="bi bi-heart"></i></button>
+                        <button class="product-action-btn"><i class="bi bi-eye"></i></button>
+                    </div>
+                </div>
+                <div class="product-body">
+                    <div class="product-title">ساعة يد فاخرة</div>
+                    <div class="product-rating">
+                        <div class="stars"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></div>
+                        <span class="count">(76)</span>
+                    </div>
+                    <div class="product-footer">
+                        <div class="product-prices"><span class="product-price">599 ₪</span></div>
+                        <button class="product-btn">أضف</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="product-card">
+                <div class="product-img">
+                    <img src="https://images.unsplash.com/photo-1511499767150-a48a237f0083?w=400" alt="نظارة">
+                    <span class="product-badge">-15%</span>
+                    <div class="product-actions">
+                        <button class="product-action-btn"><i class="bi bi-heart"></i></button>
+                        <button class="product-action-btn"><i class="bi bi-eye"></i></button>
+                    </div>
+                </div>
+                <div class="product-body">
+                    <div class="product-title">نظارة طبية عصرية</div>
+                    <div class="product-rating">
+                        <div class="stars"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star"></i></div>
+                        <span class="count">(41)</span>
+                    </div>
+                    <div class="product-footer">
+                        <div class="product-prices">
+                            <span class="product-price">169 ₪</span>
+                            <span class="product-old-price">199 ₪</span>
+                        </div>
+                        <button class="product-btn">أضف</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="product-card">
+                <div class="product-img">
+                    <img src="https://images.unsplash.com/photo-1484704849700-f032a568e944?w=400" alt="لابتوب">
+                    <div class="product-actions">
+                        <button class="product-action-btn"><i class="bi bi-heart"></i></button>
+                        <button class="product-action-btn"><i class="bi bi-eye"></i></button>
+                    </div>
+                </div>
+                <div class="product-body">
+                    <div class="product-title">لابتوب عالي الأداء</div>
+                    <div class="product-rating">
+                        <div class="stars"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-half"></i></div>
+                        <span class="count">(156)</span>
+                    </div>
+                    <div class="product-footer">
+                        <div class="product-prices"><span class="product-price">2,499 ₪</span></div>
+                        <button class="product-btn">أضف</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="product-card">
+                <div class="product-img">
+                    <img src="https://images.unsplash.com/photo-1585386959984-a4155224a1ad?w=400" alt="عطر">
+                    <span class="product-badge">-25%</span>
+                    <div class="product-actions">
+                        <button class="product-action-btn"><i class="bi bi-heart"></i></button>
+                        <button class="product-action-btn"><i class="bi bi-eye"></i></button>
+                    </div>
+                </div>
+                <div class="product-body">
+                    <div class="product-title">عطر فاخر مميز</div>
+                    <div class="product-rating">
+                        <div class="stars"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></div>
+                        <span class="count">(203)</span>
+                    </div>
+                    <div class="product-footer">
+                        <div class="product-prices">
+                            <span class="product-price">149 ₪</span>
+                            <span class="product-old-price">199 ₪</span>
+                        </div>
+                        <button class="product-btn">أضف</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="categories-section">
+    <div class="container">
+        <h2 class="section-title">تسوق حسب الفئة</h2>
+        <div class="categories-grid">
+            <a href="#" class="cat-card"><div class="cat-icon"><i class="bi bi-phone"></i></div><div class="cat-name">إلكترونيات</div><div class="cat-count">245 منتج</div></a>
+            <a href="#" class="cat-card"><div class="cat-icon"><i class="bi bi-watch"></i></div><div class="cat-name">ساعات ذكية</div><div class="cat-count">128 منتج</div></a>
+            <a href="#" class="cat-card"><div class="cat-icon"><i class="bi bi-bag"></i></div><div class="cat-name">ملابس</div><div class="cat-count">532 منتج</div></a>
+            <a href="#" class="cat-card"><div class="cat-icon"><i class="bi bi-controller"></i></div><div class="cat-name">ألعاب</div><div class="cat-count">189 منتج</div></a>
+            <a href="#" class="cat-card"><div class="cat-icon"><i class="bi bi-house-door"></i></div><div class="cat-name">منزل</div><div class="cat-count">356 منتج</div></a>
+            <a href="#" class="cat-card"><div class="cat-icon"><i class="bi bi-gift"></i></div><div class="cat-name">هدايا</div><div class="cat-count">98 منتج</div></a>
+        </div>
+    </div>
+</section>
+
+<section class="features-section">
+    <div class="container"><div class="features-grid">
+        <div class="feature-card"><div class="feature-icon"><i class="bi bi-truck"></i></div><div class="feature-title">شحن مجاني</div><div class="feature-desc">على جميع الطلبات فوق 200₪</div></div>
+        <div class="feature-card"><div class="feature-icon"><i class="bi bi-shield-check"></i></div><div class="feature-title">دفع آمن</div><div class="feature-desc">معاملات مشفرة 100%</div></div>
+        <div class="feature-card"><div class="feature-icon"><i class="bi bi-arrow-repeat"></i></div><div class="feature-title">إرجاع مجاني</div><div class="feature-desc">استرجاع خلال 14 يوم</div></div>
+        <div class="feature-card"><div class="feature-icon"><i class="bi bi-headset"></i></div><div class="feature-title">دعم 24/7</div><div class="feature-desc">فريق جاهز لمساعدتك</div></div>
+    </div></div>
+</section>
+
+<footer class="main-footer">
+    <div class="container">
+        <div class="footer-top">
+            <div class="footer-col"><div class="footer-logo"><div class="logo-icon"><i class="bi bi-box-seam"></i></div><span>متجري 3D</span></div><p class="footer-desc">متجرك الإلكتروني الأفضل لشراء جميع احتياجاتك بأسعار منافسة وجودة عالية مع تقنية عرض 3D المتطورة.</p><div class="social-links"><a href="#" class="social-link"><i class="bi bi-facebook"></i></a><a href="#" class="social-link"><i class="bi bi-instagram"></i></a><a href="#" class="social-link"><i class="bi bi-twitter"></i></a><a href="#" class="social-link"><i class="bi bi-whatsapp"></i></a><a href="#" class="social-link"><i class="bi bi-youtube"></i></a></div></div>
+            <div class="footer-col"><h4>روابط سريعة</h4><ul class="footer-links"><li><a href="#"><i class="bi bi-chevron-left"></i> الرئيسية</a></li><li><a href="#"><i class="bi bi-chevron-left"></i> المنتجات</a></li><li><a href="#"><i class="bi bi-chevron-left"></i> الأكثر مبيعاً</a></li><li><a href="spin-wheel.html"><i class="bi bi-chevron-left"></i> دولاب الحظ</a></li><li><a href="#"><i class="bi bi-chevron-left"></i> عنا</a></li></ul></div>
+            <div class="footer-col"><h4>خدمة العملاء</h4><ul class="footer-links"><li><a href="#"><i class="bi bi-chevron-left"></i> حسابي</a></li><li><a href="#"><i class="bi bi-chevron-left"></i> تتبع الطلب</a></li><li><a href="#"><i class="bi bi-chevron-left"></i> سياسة الإرجاع</a></li><li><a href="#"><i class="bi bi-chevron-left"></i> الشحن والتوصيل</a></li><li><a href="#"><i class="bi bi-chevron-left"></i> الأسئلة الشائعة</a></li></ul></div>
+            <div class="footer-col"><h4>تواصل معنا</h4><div class="footer-contact"><div class="contact-item"><div class="contact-icon"><i class="bi bi-geo-alt"></i></div><span>رام الله، فلسطين</span></div><div class="contact-item"><div class="contact-icon"><i class="bi bi-telephone"></i></div><span dir="ltr">+970 599 123 456</span></div><div class="contact-item"><div class="contact-icon"><i class="bi bi-envelope"></i></div><span>info@store.ps</span></div></div></div>
+            <div class="footer-col"><h4>اشترك بالنشرة</h4><p style="color: rgba(255,255,255,0.7); font-size: 14px; margin-bottom: 16px;">احصل على آخر العروض والتحديثات</p><form class="newsletter-form"><input type="email" placeholder="بريدك الإلكتروني" required><button type="submit"><i class="bi bi-send"></i></button></form></div>
+        </div>
+        <div class="footer-middle"><div class="payment-methods"><div class="payment-item"><i class="bi bi-credit-card"></i></div><div class="payment-item"><i class="bi bi-paypal"></i></div><div class="payment-item"><i class="bi bi-cash"></i></div><div class="payment-item"><i class="bi bi-bank"></i></div></div></div>
+        <div class="footer-bottom"><p>&copy; 2025 متجري 3D. جميع الحقوق محفوظة.</p><div class="footer-links-inline"><a href="#">سياسة الخصوصية</a><a href="#">شروط الاستخدام</a><a href="#">سياسة الإرجاع</a></div></div>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+<script>
+function openMobileMenu() { document.getElementById('mobileMenu').classList.add('active'); document.getElementById('mobileMenuOverlay').classList.add('active'); document.body.style.overflow = 'hidden'; }
+function closeMobileMenu() { document.getElementById('mobileMenu').classList.remove('active'); document.getElementById('mobileMenuOverlay').classList.remove('active'); document.body.style.overflow = ''; }
+function openAIChat() { alert('🤖 سيتم فتح نافذة الدردشة مع مساعد ذكاء اصطناعي للإجابة على استفساراتك!\n\n🎁 جرب دولاب الحظ للحصول على خصومات حصرية!'); window.location.href = 'spin-wheel.html'; }
+const heroSwiper = new Swiper('.heroSwiper', { loop: true, autoplay: { delay: 5000 }, pagination: { el: '.swiper-pagination', clickable: true }, speed: 800 });
+</script>
+</body>
+</html>
