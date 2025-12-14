@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دولاب الحظ - 3D Store Demo</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        .wheel-container {
+            background: white;
+            border-radius: 30px;
+            padding: 3rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 700px;
+            width: 100%;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .wheel-header { text-align: center; margin-bottom: 2rem; }
+        .wheel-header h1 {
+            font-size: 2.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .wheel-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto 2rem;
+        }
+
+        #wheelCanvas { width: 100%; height: auto; display: block; }
+
+        .wheel-pointer {
+            position: absolute;
+            top: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 35px solid #ef4444;
+            filter: drop-shadow(0 4px 10px rgba(239, 68, 68, 0.4));
+            z-index: 10;
+        }
+
+        .btn-spin {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f59e0b, #ef4444);
+            color: white;
+            border: 4px solid white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 8px 25px rgba(245, 158, 11, 0.4);
+            z-index: 5;
+            transition: transform 0.3s;
+        }
+
+        .btn-spin:hover:not(:disabled) {
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        .btn-spin:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .result-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+
+        .result-modal.show { opacity: 1; visibility: visible; }
+
+        .result-content {
+            background: white;
+            border-radius: 30px;
+            padding: 3rem;
+            text-align: center;
+            max-width: 450px;
+            transform: scale(0.7);
+            transition: transform 0.3s;
+        }
+
+        .result-modal.show .result-content { transform: scale(1); }
+
+        .result-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            animation: bounce 0.6s;
+        }
+
+        @keyframes bounce {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .result-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #1e293b;
+            margin-bottom: 1rem;
+        }
+
+        .result-prize {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #3b82f6;
+            margin-bottom: 1rem;
+        }
+
+        .result-code {
+            background: #f8fafc;
+            padding: 1rem 2rem;
+            border-radius: 15px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #3b82f6;
+            margin-bottom: 1.5rem;
+            border: 2px dashed #3b82f6;
+        }
+
+        .btn-close { padding: 1rem 3rem; border-radius: 15px; background: #3b82f6; color: white; border: none; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="wheel-container">
+        <div class="wheel-header">
+            <h1>🎁 دولاب الحظ</h1>
+            <p class="text-muted">أدر الدولاب واحصل على فرصتك للفوز!</p>
+        </div>
+
+        <div class="wheel-wrapper">
+            <div class="wheel-pointer"></div>
+            <canvas id="wheelCanvas" width="400" height="400"></canvas>
+            <button class="btn-spin" id="spinBtn" onclick="spin()">
+                <i class="bi bi-play-fill"></i>
+            </button>
+        </div>
+
+        <div class="text-center">
+            <a href="../demo.html" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-right"></i> العودة للصفحة الرئيسية
+            </a>
+        </div>
+    </div>
+
+    <div class="result-modal" id="resultModal">
+        <div class="result-content">
+            <div class="result-icon" id="resultIcon">🎉</div>
+            <h2 class="result-title">مبروك!</h2>
+            <div class="result-prize" id="resultPrize">خصم 20%</div>
+            <p class="text-muted">استخدم الكود التالي عند الشراء:</p>
+            <div class="result-code" id="resultCode">SPIN2024XYZ</div>
+            <button class="btn-close" onclick="closeModal()">رائع!</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('wheelCanvas');
+        const ctx = canvas.getContext('2d');
+        const prizes = [
+            { name: 'خصم 10%', color: '#fbbf24', icon: '🎁', probability: 30 },
+            { name: 'حظاً أوفر', color: '#ef4444', icon: '😢', probability: 25 },
+            { name: 'خصم 20%', color: '#3b82f6', icon: '🎉', probability: 20 },
+            { name: 'شحن مجاني', color: '#10b981', icon: '🚚', probability: 25 }
+        ];
+
+        let rotation = 0;
+        let isSpinning = false;
+
+        function drawWheel() {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = Math.min(centerX, centerY) - 10;
+            const anglePerPrize = (Math.PI * 2) / prizes.length;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(rotation);
+
+            prizes.forEach((prize, i) => {
+                const startAngle = i * anglePerPrize;
+                const endAngle = startAngle + anglePerPrize;
+
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, radius, startAngle, endAngle);
+                ctx.fillStyle = prize.color;
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                ctx.save();
+                ctx.rotate(startAngle + anglePerPrize / 2);
+                ctx.textAlign = 'center';
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 18px Arial';
+                ctx.fillText(prize.name, radius * 0.65, 5);
+                ctx.font = '25px Arial';
+                ctx.fillText(prize.icon, radius * 0.65, -18);
+                ctx.restore();
+            });
+
+            ctx.restore();
+        }
+
+        function spin() {
+            if (isSpinning) return;
+            isSpinning = true;
+            document.getElementById('spinBtn').disabled = true;
+
+            const selectedPrize = prizes[Math.floor(Math.random() * prizes.length)];
+            const prizeIndex = prizes.indexOf(selectedPrize);
+            const anglePerPrize = (Math.PI * 2) / prizes.length;
+            const targetRotation = (5 * Math.PI * 2) + (prizeIndex * anglePerPrize) + (anglePerPrize / 2);
+
+            const duration = 4000;
+            const startTime = Date.now();
+
+            function animate() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+
+                rotation = targetRotation * easeOut;
+                drawWheel();
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    isSpinning = false;
+                    showResult(selectedPrize);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        function showResult(prize) {
+            const code = 'SPIN' + Math.random().toString(36).substr(2, 8).toUpperCase();
+            document.getElementById('resultIcon').textContent = prize.icon;
+            document.getElementById('resultPrize').textContent = prize.name;
+            document.getElementById('resultCode').textContent = code;
+            document.getElementById('resultModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('resultModal').classList.remove('show');
+            document.getElementById('spinBtn').disabled = false;
+        }
+
+        drawWheel();
+    </script>
+</body>
+</html>
