@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>متجر ثلاثي الأبعاد - الصفحة الرئيسية</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; }
+        
+        /* Header */
+        header {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            color: white;
+            padding: 1rem 0;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.2);
+        }
+        .navbar-brand { font-size: 1.5rem; font-weight: bold; color: white !important; }
+        .nav-link { color: rgba(255,255,255,0.9) !important; margin: 0 0.5rem; }
+        .nav-link:hover { color: white !important; }
+        
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 400px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            padding: 2rem;
+        }
+        .hero h1 { font-size: 3rem; font-weight: bold; margin-bottom: 1rem; }
+        .hero p { font-size: 1.2rem; margin-bottom: 2rem; }
+        .btn-hero { padding: 1rem 2rem; font-size: 1.1rem; border-radius: 50px; }
+        
+        /* Products */
+        .products-section { padding: 3rem 0; }
+        .section-title {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 2rem;
+            position: relative;
+            padding-bottom: 1rem;
+        }
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background: linear-gradient(90deg, #3b82f6, #10b981);
+            border-radius: 2px;
+        }
+        .product-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 2rem;
+            transition: all 0.3s;
+        }
+        .product-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        .product-image {
+            height: 200px;
+            overflow: hidden;
+            position: relative;
+        }
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s;
+        }
+        .product-card:hover .product-image img { transform: scale(1.1); }
+        .product-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: bold;
+            color: white;
+            font-size: 0.85rem;
+        }
+        .badge-sale { background: #ef4444; }
+        .badge-new { background: #3b82f6; }
+        .badge-hot { background: #10b981; }
+        .product-info { padding: 1.5rem; }
+        .product-name {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .product-rating {
+            color: #fbbf24;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .product-price {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #3b82f6;
+        }
+        .old-price {
+            text-decoration: line-through;
+            color: #94a3b8;
+            font-size: 1rem;
+            margin-left: 0.5rem;
+        }
+        
+        /* Back to Top */
+        #backToTop {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+            z-index: 999;
+        }
+        #backToTop.show { opacity: 1; visibility: visible; }
+        #backToTop:hover { background: #2563eb; transform: translateY(-5px); }
+        
+        /* Footer */
+        footer {
+            background: #1f2937;
+            color: white;
+            padding: 3rem 0 1rem;
+            margin-top: 4rem;
+        }
+        footer a { color: rgba(255,255,255,0.7); text-decoration: none; }
+        footer a:hover { color: white; }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <header>
+        <div class="container">
+            <nav class="navbar navbar-expand-lg">
+                <a class="navbar-brand" href="#">
+                    <i class="bi bi-box-seam"></i> متجر ثلاثي الأبعاد
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="nav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item"><a class="nav-link" href="#">الرئيسية</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#">المنتجات</a></li>
+                        <li class="nav-item"><a class="nav-link" href="#">الأقسام</a></li>
+                        <li class="nav-item"><a class="nav-link" href="spin-wheel.html">دولاب الحظ</a></li>
+                    </ul>
+                    <div class="d-flex ms-3">
+                        <button class="btn btn-light me-2"><i class="bi bi-search"></i></button>
+                        <button class="btn btn-light me-2"><i class="bi bi-heart"></i></button>
+                        <button class="btn btn-light"><i class="bi bi-cart3"></i> <span class="badge bg-danger">3</span></button>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div>
+            <h1>اكتشف عالم المنتجات ثلاثية الأبعاد</h1>
+            <p>تجربة تسوق فريدة مع تقنية 3D المتقدمة</p>
+            <button class="btn btn-light btn-hero">تسوق الآن <i class="bi bi-arrow-left"></i></button>
+        </div>
+    </section>
+
+    <!-- Best Selling -->
+    <section class="products-section">
+        <div class="container">
+            <h2 class="section-title">الأكثر مبيعاً 🔥</h2>
+            <div class="row">
+                <div class="col-6 col-md-3">
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="https://images.unsplash.com/photo-1572635196237-14b3f281503f?w=400" alt="Product">
+                            <span class="product-badge badge-sale">خصم 30%</span>
+                        </div>
+                        <div class="product-info">
+                            <h3 class="product-name">سماعات لاسلكية عالية الجودة</h3>
+                            <div class="product-rating">
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-half"></i>
+                                <span class="text-muted">(124)</span>
+                            </div>
+                            <div class="product-price">
+                                ₪249
+                                <span class="old-price">₪350</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400" alt="Product">
+                            <span class="product-badge badge-new">جديد</span>
+                        </div>
+                        <div class="product-info">
+                            <h3 class="product-name">ساعة ذكية بتصميم عصري</h3>
+                            <div class="product-rating">
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star"></i>
+                                <span class="text-muted">(89)</span>
+                            </div>
+                            <div class="product-price">₪499</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400" alt="Product">
+                            <span class="product-badge badge-hot">الأكثر طلباً</span>
+                        </div>
+                        <div class="product-info">
+                            <h3 class="product-name">سماعات رأس احترافية</h3>
+                            <div class="product-rating">
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <span class="text-muted">(203)</span>
+                            </div>
+                            <div class="product-price">₪359</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="product-card">
+                        <div class="product-image">
+                            <img src="https://images.unsplash.com/photo-1491553895911-0055eca6402d?w=400" alt="Product">
+                            <span class="product-badge badge-sale">خصم 25%</span>
+                        </div>
+                        <div class="product-info">
+                            <h3 class="product-name">نظارة شمسية عصرية</h3>
+                            <div class="product-rating">
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star-fill"></i>
+                                <i class="bi bi-star"></i>
+                                <span class="text-muted">(67)</span>
+                            </div>
+                            <div class="product-price">
+                                ₪139
+                                <span class="old-price">₪185</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Back to Top -->
+    <button id="backToTop" onclick="scrollToTop()">
+        <i class="bi bi-arrow-up"></i>
+    </button>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5>متجر ثلاثي الأبعاد</h5>
+                    <p class="text-muted">منصة تسوق إلكترونية متطورة مع تقنية عرض المنتجات ثلاثية الأبعاد</p>
+                </div>
+                <div class="col-md-4">
+                    <h5>روابط سريعة</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#">من نحن</a></li>
+                        <li><a href="#">سياسة الخصوصية</a></li>
+                        <li><a href="#">الشروط والأحكام</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>تواصل معنا</h5>
+                    <p><i class="bi bi-envelope"></i> info@3dstore.ps</p>
+                    <p><i class="bi bi-phone"></i> +970 123 456 789</p>
+                    <p>
+                        <a href="spin-wheel.html" class="btn btn-primary btn-sm">
+                            <i class="bi bi-gift"></i> دولاب الحظ
+                        </a>
+                    </p>
+                </div>
+            </div>
+            <hr style="border-color: rgba(255,255,255,0.1);">
+            <div class="text-center text-muted">
+                <p>&copy; 2025 متجر ثلاثي الأبعاد. جميع الحقوق محفوظة.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Back to Top Button
+        window.addEventListener('scroll', function() {
+            const backToTop = document.getElementById('backToTop');
+            if (window.scrollY > 300) {
+                backToTop.classList.add('show');
+            } else {
+                backToTop.classList.remove('show');
+            }
+        });
+
+        function scrollToTop() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    </script>
+</body>
+</html>
